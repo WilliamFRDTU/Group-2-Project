@@ -1,4 +1,5 @@
 # Where things are
+theme               : minimal
 source              : .
 destination         : ./_site
 collections_dir     : .
