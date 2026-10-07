@@ -1,10 +1,11 @@
 {
   "dependencies": {
-    "com.fmod.fmod-for-unity.v204": {
-      "version": "file:C:/Users/Frederik Rasmussen/Downloads/fmodstudio20400.tgz",
+    "com.fmod.fmod-for-unity.v203": {
+      "version": "2.3.15",
       "depth": 0,
-      "source": "local-tarball",
-      "dependencies": {}
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
     },
     "com.unity.ai.navigation": {
       "version": "2.0.14",
