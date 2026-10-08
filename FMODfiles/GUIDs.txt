@@ -1,0 +1,5 @@
+{ac2627f1-967a-40f5-be6c-eb9d9fa296d3} bank:/Master
+{343b0725-e701-0cb7-3825-61636e51904b} bank:/Master.strings
+{29cf67c0-7609-4062-8129-24aee0aba5d9} bus:/
+{d623e7d0-8187-4da1-a126-02d9724dba2c} bus:/Reverb
+{5630df06-7d6d-4e9f-b997-b6ae11af6429} event:/MellowChord1
