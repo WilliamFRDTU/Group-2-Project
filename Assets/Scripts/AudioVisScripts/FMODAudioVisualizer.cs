@@ -32,6 +32,7 @@ public class FMODAudioVisualizer : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = false;
 
+
     // FMOD
     private EventInstance audioEvent;
     private ChannelGroup channelGroup;
@@ -162,24 +163,43 @@ public class FMODAudioVisualizer : MonoBehaviour
         }
     }
 
-    private void SpawnMeters()
+    
+private void SpawnMeters()
+{
+    meters = new GameObject[numberOfBands];
+    initialScales = new Vector3[numberOfBands];
+    initialPositionsY = new float[numberOfBands];
+
+    for (int i = 0; i < numberOfBands; i++)
     {
-        meters = new GameObject[numberOfBands];
-        initialScales = new Vector3[numberOfBands];
-        initialPositionsY = new float[numberOfBands];
+        Vector3 position = transform.position +
+            transform.right * (i * spaceBetweenMeters);
 
-        for (int i = 0; i < numberOfBands; i++)
+        meters[i] = Instantiate(
+            meterPrefab,
+            position,
+            transform.rotation,
+            transform
+        );
+
+        initialScales[i] = meters[i].transform.localScale;
+        initialPositionsY[i] = meters[i].transform.localPosition.y;
+
+        // Generate the HSB spectrum, starting at red.
+        float hue = (float)i / numberOfBands;
+        Color bandColor = Color.HSVToRGB(hue, 1f, 1f);
+
+        // Apply the color to all renderers on the meter and its children.
+        Renderer[] renderers =
+            meters[i].GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer rend in renderers)
         {
-            Vector3 position = transform.position +
-                transform.right * (i * spaceBetweenMeters);
-
-            meters[i] = Instantiate(
-                meterPrefab, position, transform.rotation, transform);
-
-            initialScales[i] = meters[i].transform.localScale;
-            initialPositionsY[i] = meters[i].transform.localPosition.y;
+            rend.material.color = bandColor;
         }
     }
+}
+
 
     private void Update()
     {

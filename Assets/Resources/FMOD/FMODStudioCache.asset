@@ -15,10 +15,10 @@ MonoBehaviour:
   Path: ../Project1/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639280087969034574
+  lastModified: 639280151503757082
   FileSizes:
   - Name: Desktop
-    Value: 235232
+    Value: 682976
   Exists: 1
 --- !u!114 &-5499372405100963496
 MonoBehaviour:
@@ -47,6 +47,33 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 15718
+--- !u!114 &-1953625049682058295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/Just be around guitars+piano
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/Just be around guitars+piano
+  Guid:
+    Data1: -1705008924
+    Data2: 1175830992
+    Data3: 1508384393
+    Data4: 446525341
+  Banks:
+  - {fileID: -8960925662339775825}
+  IsStream: 1
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 18679
 --- !u!114 &-1896354743423815326
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,10 +89,10 @@ MonoBehaviour:
   Path: ../Project1/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639280087969070094
+  lastModified: 639280151503822606
   FileSizes:
   - Name: Desktop
-    Value: 794
+    Value: 912
   Exists: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -84,13 +111,42 @@ MonoBehaviour:
   - {fileID: -8960925662339775825}
   EditorEvents:
   - {fileID: -5499372405100963496}
+  - {fileID: 5170391109444077153}
+  - {fileID: -1953625049682058295}
   EditorParameters: []
   MasterBanks:
   - {fileID: -8960925662339775825}
   StringsBanks:
   - {fileID: -1896354743423815326}
   cacheVersion: 132096
-  cacheTime: 639280087969070094
+  cacheTime: 639280151503822606
   SerializableEventsDict:
   - key: event:/In the world strings+piano+guitar
     index: 0
+--- !u!114 &5170391109444077153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/Nic Hanson drums
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/Nic Hanson drums
+  Guid:
+    Data1: -1040407189
+    Data2: 1337044262
+    Data3: -450578762
+    Data4: 1603013698
+  Banks:
+  - {fileID: -8960925662339775825}
+  IsStream: 1
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 12492
