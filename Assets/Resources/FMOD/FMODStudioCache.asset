@@ -15,11 +15,38 @@ MonoBehaviour:
   Path: ../../FMOD_INTERGRATED/Fmod_file/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639280062903148617
+  lastModified: 639280113524743527
   FileSizes:
   - Name: Desktop
-    Value: 806
+    Value: 866
   Exists: 1
+--- !u!114 &-977340434498680240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/Nic Hanson drums
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/Nic Hanson drums
+  Guid:
+    Data1: -1903494321
+    Data2: 1212673490
+    Data3: -821548130
+    Data4: 1084588275
+  Banks:
+  - {fileID: 4230170397740200806}
+  IsStream: 1
+  Is3D: 1
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 12492
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -37,16 +64,19 @@ MonoBehaviour:
   - {fileID: 4230170397740200806}
   EditorEvents:
   - {fileID: 4529830029315183235}
+  - {fileID: -977340434498680240}
   EditorParameters: []
   MasterBanks:
   - {fileID: 4230170397740200806}
   StringsBanks:
   - {fileID: -7948318166075272439}
   cacheVersion: 132096
-  cacheTime: 639280062903148617
+  cacheTime: 639280113524743527
   SerializableEventsDict:
   - key: event:/In the world strings_piano_guitar
     index: 0
+  - key: event:/Nic Hanson drums
+    index: 1
 --- !u!114 &4230170397740200806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,10 +92,10 @@ MonoBehaviour:
   Path: ../../FMOD_INTERGRATED/Fmod_file/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639280062903143547
+  lastModified: 639280113524733181
   FileSizes:
   - Name: Desktop
-    Value: 235296
+    Value: 418464
   Exists: 1
 --- !u!114 &4529830029315183235
 MonoBehaviour:
