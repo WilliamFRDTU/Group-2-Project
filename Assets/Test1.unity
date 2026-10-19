@@ -150,11 +150,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GetFMODSpectrumData
   _eventPath:
     Guid:
-      Data1: -1903494321
-      Data2: 1212673490
-      Data3: -821548130
-      Data4: 1084588275
-    Path: event:/Nic Hanson drums
+      Data1: -983058379
+      Data2: 1217886910
+      Data3: 2119603643
+      Data4: -1466927701
+    Path: event:/In the world strings+piano+guitar
   _windowSize: 512
   _windowShape: 3
   _samples: []
@@ -331,11 +331,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FMODAudioVisualizer
   eventPath:
     Guid:
-      Data1: -1903494321
-      Data2: 1212673490
-      Data3: -821548130
-      Data4: 1084588275
-    Path: event:/Nic Hanson drums
+      Data1: -983058379
+      Data2: 1217886910
+      Data3: 2119603643
+      Data4: -1466927701
+    Path: event:/In the world strings+piano+guitar
   playOnAwake: 1
   windowSize: 512
   windowShape: 3
