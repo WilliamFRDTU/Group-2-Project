@@ -13,24 +13,47 @@ public class FMODAudioVisualizer : MonoBehaviour
     [SerializeField] private bool playOnAwake = true;
 
     [Header("FFT Settings")]
-    [SerializeField] private int windowSize = 512;
+    [Tooltip("Number of spectrum bins (power of two, 64-8192). FFT size is twice this. " +
+             "4096 gives ~6 Hz resolution at 48 kHz, which the low bands need.")]
+    [SerializeField] private int windowSize = 4096;
     [SerializeField] private DSP_FFT_WINDOW_TYPE windowShape =
         DSP_FFT_WINDOW_TYPE.HANNING;
 
+    [Header("Frequency Axis (logarithmic)")]
+    [SerializeField] private float minFrequency = 20f;
+    [SerializeField] private float maxFrequency = 20000f;
+    [Tooltip("31 is roughly 1/3 octave across 20 Hz - 20 kHz.")]
+    [SerializeField] private int numberOfBands = 31;
+
+    [Header("Level Scaling (dB)")]
+    [Tooltip("Level that maps to zero bar height.")]
+    [SerializeField] private float minDb = -90f;
+    [Tooltip("Level that maps to full bar height.")]
+    [SerializeField] private float maxDb = 0f;
+    [Tooltip("Calibration offset added to every band. Raise it if the bars sit too low.")]
+    [SerializeField] private float dbOffset = 0f;
+
+    [Header("Tilt Compensation")]
+    [Tooltip("dB boost per octave above the reference frequency (cut below it). " +
+             "4.5 is the common analyzer setting, 3 is pink-noise flat.")]
+    [SerializeField] private float tiltDbPerOctave = 4.5f;
+    [SerializeField] private float tiltReferenceHz = 1000f;
+
     [Header("Visualizer")]
     [SerializeField] private GameObject meterPrefab;
-    [SerializeField] private int numberOfBands = 7;
-    [SerializeField] private float meterIntensity = 10f;
+    [Tooltip("Bar height at 0..1 normalized level is startScale + level * scaleMultiplier.")]
     [SerializeField] private float scaleMultiplier = 10f;
     [SerializeField] private float startScale = 1f;
-    [SerializeField] private float spaceBetweenMeters = 0.5f;
+    [SerializeField] private float spaceBetweenMeters = 0.2f;
 
-    [Header("Smoothing")]
+    [Header("Smoothing (applied to the 0..1 normalized dB level)")]
     [SerializeField] private float bufferStartSpeed = 0.005f;
     [SerializeField] private float bufferAccelRate = 1.2f;
 
     [Header("Debug")]
+    [Tooltip("Logs the loudest band in dB once a second so you can set Db Offset.")]
     [SerializeField] private bool showDebugLogs = false;
+
 
     // FMOD
     private EventInstance audioEvent;
@@ -38,16 +61,25 @@ public class FMODAudioVisualizer : MonoBehaviour
     private DSP fftDSP;
     private bool dspAttached;
     private bool eventStarted;
+    private int sampleRate = 48000;
 
     // FFT data
     private float[] samples;
     private int spectrumLength;
+    private float binWidth;
 
-    // Frequency bands
-    private float[] frequencyBands;
+    // Log band layout (precomputed)
+    private float[] bandCenterHz;
+    private float[] bandTiltDb;
+    private int[] bandFirstBin;
+    private int[] bandLastBin;
+    private float[] bandCenterBin;
+
+    // Band levels
+    private float[] frequencyBands;   // normalized 0..1 (after dB scaling)
+    private float[] bandDb;           // dB (after tilt + offset)
     private float[] bandBuffer;
     private float[] bufferDecrease;
-    private int[] samplesPerBand;
 
     // Visual objects
     private GameObject[] meters;
@@ -55,10 +87,13 @@ public class FMODAudioVisualizer : MonoBehaviour
     private float[] initialPositionsY;
 
     private bool initialized;
+    private float debugTimer;
 
-    // Optional public access to frequency values
+    // Optional public access to band data
     public float[] FrequencyBands => frequencyBands;
     public float[] BandBuffer => bandBuffer;
+    public float[] BandDb => bandDb;
+    public float[] BandCenterFrequencies => bandCenterHz;
 
     private void Start()
     {
@@ -69,27 +104,53 @@ public class FMODAudioVisualizer : MonoBehaviour
             return;
         }
 
-        if (windowSize < 64)
+        // FMOD's FFT window must be a power of two between 128 and 16384,
+        // and we ask FMOD for windowSize * 2.
+        int clamped = Mathf.Clamp(Mathf.ClosestPowerOfTwo(windowSize), 64, 8192);
+        if (clamped != windowSize)
         {
-            UnityEngine.Debug.LogError("FFT window size must be at least 64.", this);
-            enabled = false;
-            return;
+            UnityEngine.Debug.LogWarning(
+                "FFT window size adjusted from " + windowSize + " to " + clamped + ".", this);
+            windowSize = clamped;
         }
 
         numberOfBands = Mathf.Max(1, numberOfBands);
 
         samples = new float[windowSize];
         frequencyBands = new float[numberOfBands];
+        bandDb = new float[numberOfBands];
         bandBuffer = new float[numberOfBands];
         bufferDecrease = new float[numberOfBands];
-        samplesPerBand = new int[numberOfBands];
 
-        CalculateBandSizes();
+        bandCenterHz = new float[numberOfBands];
+        bandTiltDb = new float[numberOfBands];
+        bandFirstBin = new int[numberOfBands];
+        bandLastBin = new int[numberOfBands];
+        bandCenterBin = new float[numberOfBands];
+
+        ReadSampleRate();
+        CalculateBandLayout();
         SpawnMeters();
 
         InitializeFMOD();
 
         initialized = true;
+    }
+
+    private void ReadSampleRate()
+    {
+        FMOD.SPEAKERMODE speakerMode;
+        int rawSpeakers;
+        int rate;
+
+        FMOD.RESULT result = RuntimeManager.CoreSystem.getSoftwareFormat(
+            out rate, out speakerMode, out rawSpeakers);
+
+        if (result == FMOD.RESULT.OK && rate > 0)
+            sampleRate = rate;
+        else
+            UnityEngine.Debug.LogWarning(
+                "Could not read FMOD sample rate, assuming " + sampleRate + " Hz.", this);
     }
 
     private void InitializeFMOD()
@@ -136,29 +197,44 @@ public class FMODAudioVisualizer : MonoBehaviour
             PlayFMODEvent();
     }
 
-    private void CalculateBandSizes()
+    /// <summary>
+    /// Builds logarithmically spaced bands between minFrequency and maxFrequency
+    /// and works out, for each band, which FFT bins it covers (in real Hz, not
+    /// as a fraction of the bin count) plus its tilt-compensation gain.
+    /// </summary>
+    private void CalculateBandLayout()
     {
-        // Divide the available positive-frequency bins into
-        // approximately logarithmic bands.
-        int totalBins = windowSize;
-        int previousBin = 0;
+        float nyquist = sampleRate * 0.5f;
+        float minF = Mathf.Max(1f, minFrequency);
+        float maxF = Mathf.Min(maxFrequency, nyquist);
+
+        if (maxF <= minF)
+        {
+            UnityEngine.Debug.LogWarning(
+                "Invalid frequency range, falling back to 20 Hz - 20 kHz.", this);
+            minF = 20f;
+            maxF = Mathf.Min(20000f, nyquist);
+        }
+
+        // FMOD returns windowSize bins covering 0 Hz to Nyquist.
+        binWidth = sampleRate / (windowSize * 2f);
+
+        float ratio = maxF / minF;
+        float refHz = Mathf.Max(1f, tiltReferenceHz);
 
         for (int i = 0; i < numberOfBands; i++)
         {
-            float startFraction = (float)i / numberOfBands;
-            float endFraction = (float)(i + 1) / numberOfBands;
+            float lo = minF * Mathf.Pow(ratio, (float)i / numberOfBands);
+            float hi = minF * Mathf.Pow(ratio, (float)(i + 1) / numberOfBands);
+            float center = Mathf.Sqrt(lo * hi); // geometric centre
 
-            int startBin = Mathf.RoundToInt(
-                Mathf.Pow(totalBins, startFraction));
+            bandCenterHz[i] = center;
+            bandTiltDb[i] = tiltDbPerOctave * Mathf.Log(center / refHz, 2f);
 
-            int endBin = Mathf.RoundToInt(
-                Mathf.Pow(totalBins, endFraction));
-
-            startBin = Mathf.Clamp(startBin, previousBin, totalBins - 1);
-            endBin = Mathf.Clamp(endBin, startBin + 1, totalBins);
-
-            samplesPerBand[i] = endBin - startBin;
-            previousBin = endBin;
+            // Skip bin 0 (DC).
+            bandFirstBin[i] = Mathf.Max(1, Mathf.CeilToInt(lo / binWidth));
+            bandLastBin[i] = Mathf.Min(windowSize - 1, Mathf.FloorToInt(hi / binWidth));
+            bandCenterBin[i] = center / binWidth;
         }
     }
 
@@ -174,12 +250,30 @@ public class FMODAudioVisualizer : MonoBehaviour
                 transform.right * (i * spaceBetweenMeters);
 
             meters[i] = Instantiate(
-                meterPrefab, position, transform.rotation, transform);
+                meterPrefab,
+                position,
+                transform.rotation,
+                transform
+            );
 
             initialScales[i] = meters[i].transform.localScale;
             initialPositionsY[i] = meters[i].transform.localPosition.y;
+
+            // Generate the HSB spectrum, starting at red.
+            float hue = (float)i / numberOfBands;
+            Color bandColor = Color.HSVToRGB(hue, 1f, 1f);
+
+            // Apply the color to all renderers on the meter and its children.
+            Renderer[] renderers =
+                meters[i].GetComponentsInChildren<Renderer>(true);
+
+            foreach (Renderer rend in renderers)
+            {
+                rend.material.color = bandColor;
+            }
         }
     }
+
 
     private void Update()
     {
@@ -194,6 +288,9 @@ public class FMODAudioVisualizer : MonoBehaviour
         ReadSpectrum();
         CalculateFrequencyBands();
         UpdateMeters();
+
+        if (showDebugLogs)
+            LogPeakBand();
     }
 
     private void AttachDSPIfReady()
@@ -260,32 +357,57 @@ public class FMODAudioVisualizer : MonoBehaviour
             samples[i] = 0f;
     }
 
+    private float BinPower(int bin)
+    {
+        float a = samples[bin];
+        return a * a;
+    }
+
+    /// <summary>
+    /// For every log band: average the power of the FFT bins inside it,
+    /// convert to dB, apply tilt compensation and calibration offset,
+    /// then map the fixed dB range (minDb..maxDb) to 0..1.
+    /// </summary>
     private void CalculateFrequencyBands()
     {
-        int binsPerBand = Mathf.Max(1, windowSize / numberOfBands);
-        int startBin = 0;
+        if (spectrumLength <= 0)
+            return;
+
+        int lastValid = spectrumLength - 1;
 
         for (int band = 0; band < numberOfBands; band++)
         {
-            int endBin = band == numberOfBands - 1
-                ? spectrumLength
-                : Mathf.Min(spectrumLength, startBin + binsPerBand);
+            int first = bandFirstBin[band];
+            int last = Mathf.Min(bandLastBin[band], lastValid);
+            float power;
 
-            float sum = 0f;
-            int count = 0;
-
-            for (int bin = startBin; bin < endBin; bin++)
+            if (last >= first)
             {
-                // Weight higher bins slightly more.
-                sum += samples[bin] * (bin + 1);
-                count++;
+                // Band covers one or more whole bins: average their power.
+                float sum = 0f;
+                for (int bin = first; bin <= last; bin++)
+                    sum += BinPower(bin);
+
+                power = sum / (last - first + 1);
+            }
+            else
+            {
+                // Band is narrower than a bin (low end): interpolate between
+                // the two neighbouring bins at the band's centre frequency.
+                float pos = bandCenterBin[band];
+                int i0 = Mathf.Clamp(Mathf.FloorToInt(pos), 0, lastValid);
+                int i1 = Mathf.Min(i0 + 1, lastValid);
+                float t = Mathf.Clamp01(pos - i0);
+
+                power = Mathf.Lerp(BinPower(i0), BinPower(i1), t);
             }
 
-            frequencyBands[band] = count > 0
-                ? (sum / count) * meterIntensity
-                : 0f;
+            // 10*log10(power) == 20*log10(amplitude). The tiny floor avoids -infinity.
+            float db = 10f * Mathf.Log10(power + 1e-12f);
+            db += bandTiltDb[band] + dbOffset;
 
-            startBin = endBin;
+            bandDb[band] = db;
+            frequencyBands[band] = Mathf.InverseLerp(minDb, maxDb, db); // clamped 0..1
         }
     }
 
@@ -322,6 +444,25 @@ public class FMODAudioVisualizer : MonoBehaviour
 
             meterTransform.localPosition = position;
         }
+    }
+
+    private void LogPeakBand()
+    {
+        debugTimer += Time.deltaTime;
+        if (debugTimer < 1f)
+            return;
+
+        debugTimer = 0f;
+
+        int peak = 0;
+        for (int i = 1; i < numberOfBands; i++)
+            if (bandDb[i] > bandDb[peak])
+                peak = i;
+
+        UnityEngine.Debug.Log(
+            "Loudest band: " + bandCenterHz[peak].ToString("F0") + " Hz at " +
+            bandDb[peak].ToString("F1") + " dB (range " + minDb + " to " + maxDb + ")",
+            this);
     }
 
     public void PlayFMODEvent()
@@ -371,4 +512,3 @@ public class FMODAudioVisualizer : MonoBehaviour
         }
     }
 }
-

@@ -15,11 +15,38 @@ MonoBehaviour:
   Path: ../../FMOD_INTERGRATED/Fmod_file/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639280113524743527
+  lastModified: 639280237597444023
   FileSizes:
   - Name: Desktop
-    Value: 866
+    Value: 962
   Exists: 1
+--- !u!114 &-6795001346160400126
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/Nic Hanson drums 2
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/Nic Hanson drums 2
+  Guid:
+    Data1: -62636588
+    Data2: 1149583465
+    Data3: -1011027045
+    Data4: 856840569
+  Banks:
+  - {fileID: 4230170397740200806}
+  IsStream: 1
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 12492
 --- !u!114 &-977340434498680240
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65,18 +92,49 @@ MonoBehaviour:
   EditorEvents:
   - {fileID: 4529830029315183235}
   - {fileID: -977340434498680240}
+  - {fileID: -6795001346160400126}
+  - {fileID: 2317672832606383835}
   EditorParameters: []
   MasterBanks:
   - {fileID: 4230170397740200806}
   StringsBanks:
   - {fileID: -7948318166075272439}
   cacheVersion: 132096
-  cacheTime: 639280113524743527
+  cacheTime: 639280237597444023
   SerializableEventsDict:
   - key: event:/In the world strings_piano_guitar
     index: 0
   - key: event:/Nic Hanson drums
     index: 1
+  - key: event:/Nic Hanson drums 2
+    index: 2
+--- !u!114 &2317672832606383835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/Sine_Sweep_0-22000_Hz
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/Sine_Sweep_0-22000_Hz
+  Guid:
+    Data1: -2040882779
+    Data2: 1114867167
+    Data3: -280586621
+    Data4: 86605694
+  Banks:
+  - {fileID: 4230170397740200806}
+  IsStream: 0
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 5000
 --- !u!114 &4230170397740200806
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -92,10 +150,10 @@ MonoBehaviour:
   Path: ../../FMOD_INTERGRATED/Fmod_file/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639280113524733181
+  lastModified: 639280237597433966
   FileSizes:
   - Name: Desktop
-    Value: 418464
+    Value: 429920
   Exists: 1
 --- !u!114 &4529830029315183235
 MonoBehaviour:
