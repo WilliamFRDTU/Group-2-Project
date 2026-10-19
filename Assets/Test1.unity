@@ -155,7 +155,7 @@ MonoBehaviour:
       Data3: 2119603643
       Data4: -1466927701
     Path: event:/In the world strings+piano+guitar
-  _windowSize: 512
+  _windowSize: 64
   _windowShape: 3
   _samples: []
 --- !u!4 &33461416
@@ -337,16 +337,16 @@ MonoBehaviour:
       Data4: -1466927701
     Path: event:/In the world strings+piano+guitar
   playOnAwake: 1
-  windowSize: 512
+  windowSize: 64
   windowShape: 3
   meterPrefab: {fileID: 5732453800594793328, guid: 3995e5705d080684b95c5c6e955b3ed2, type: 3}
-  numberOfBands: 50
+  numberOfBands: 30
   meterIntensity: 10
   scaleMultiplier: 10
   startScale: 1
-  spaceBetweenMeters: 0.5
-  bufferStartSpeed: 0.005
-  bufferAccelRate: 1.2
+  spaceBetweenMeters: 1
+  bufferStartSpeed: 0.001
+  bufferAccelRate: 1.5
   showDebugLogs: 0
 --- !u!4 &1038080519
 Transform:
