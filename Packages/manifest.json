@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.fmod.fmod-for-unity.v204": "file:C:/Users/Frederik Rasmussen/Downloads/fmodstudio20400.tgz",
+    "com.fmod.fmod-for-unity.v203": "2.3.15",
     "com.unity.ai.navigation": "2.0.14",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.38",
