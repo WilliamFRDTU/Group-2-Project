@@ -1,12 +1,8 @@
 {
   "dependencies": {
-<<<<<<< Updated upstream
-    "com.fmod.fmod-for-unity.v204": "file:C:/Users/Frederik Rasmussen/Downloads/fmodstudio20400.tgz",
-=======
-    "com.fmod.fmod-for-unity.v203": "2.3.15",
+    "com.fmod.fmod-for-unity.v204": "file:C:/Users/willi/OneDrive - Aalborg Universitet/1.sem/Adaptive Systems/fmodstudio20400.tgz",
     "com.unity.ai.assistant": "2.20.0-pre.2",
     "com.unity.ai.inference": "2.6.1",
->>>>>>> Stashed changes
     "com.unity.ai.navigation": "2.0.14",
     "com.unity.collab-proxy": "2.13.6",
     "com.unity.ide.rider": "3.0.38",

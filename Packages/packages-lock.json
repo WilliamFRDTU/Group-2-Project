@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.fmod.fmod-for-unity.v204": {
-      "version": "file:C:/Users/Frederik Rasmussen/Downloads/fmodstudio20400.tgz",
+      "version": "file:C:/Users/willi/OneDrive - Aalborg Universitet/1.sem/Adaptive Systems/fmodstudio20400.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {}

@@ -1,6 +1,5 @@
 using UnityEngine;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using FMOD;
 using FMOD.Studio;
@@ -13,17 +12,28 @@ public class FMODAudioVisualizer : MonoBehaviour
     [SerializeField] private bool playOnAwake = true;
 
     [Header("FFT Settings")]
-    [SerializeField] private int windowSize = 512;
-    [SerializeField] private DSP_FFT_WINDOW_TYPE windowShape =
-        DSP_FFT_WINDOW_TYPE.HANNING;
+    [SerializeField] private int windowSize = 4096;
+    [SerializeField] private DSP_FFT_WINDOW_TYPE windowShape = DSP_FFT_WINDOW_TYPE.HANNING;
+
+    [Header("Frequency Axis (logarithmic)")]
+    [SerializeField] private float minFrequency = 20f;
+    [SerializeField] private float maxFrequency = 20000f;
+    [SerializeField] private int numberOfBands = 31;
+
+    [Header("Level Scaling (dB)")]
+    [SerializeField] private float minDb = -90f;
+    [SerializeField] private float maxDb = 0f;
+    [SerializeField] private float dbOffset = 0f;
+
+    [Header("Tilt Compensation")]
+    [SerializeField] private float tiltDbPerOctave = 4.5f;
+    [SerializeField] private float tiltReferenceHz = 1000f;
 
     [Header("Visualizer")]
     [SerializeField] private GameObject meterPrefab;
-    [SerializeField] private int numberOfBands = 7;
-    [SerializeField] private float meterIntensity = 10f;
     [SerializeField] private float scaleMultiplier = 10f;
     [SerializeField] private float startScale = 1f;
-    [SerializeField] private float spaceBetweenMeters = 0.5f;
+    [SerializeField] private float spaceBetweenMeters = 0.2f;
 
     [Header("Smoothing")]
     [SerializeField] private float bufferStartSpeed = 0.005f;
@@ -32,34 +42,35 @@ public class FMODAudioVisualizer : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = false;
 
-
-    // FMOD
     private EventInstance audioEvent;
     private ChannelGroup channelGroup;
     private DSP fftDSP;
     private bool dspAttached;
     private bool eventStarted;
+    private int sampleRate = 48000;
 
-    // FFT data
     private float[] samples;
     private int spectrumLength;
-
-    // Frequency bands
+    private float binWidth;
+    private float[] bandCenterHz;
+    private float[] bandTiltDb;
+    private int[] bandFirstBin;
+    private int[] bandLastBin;
+    private float[] bandCenterBin;
     private float[] frequencyBands;
+    private float[] bandDb;
     private float[] bandBuffer;
     private float[] bufferDecrease;
-    private int[] samplesPerBand;
-
-    // Visual objects
     private GameObject[] meters;
     private Vector3[] initialScales;
     private float[] initialPositionsY;
-
     private bool initialized;
+    private float debugTimer;
 
-    // Optional public access to frequency values
     public float[] FrequencyBands => frequencyBands;
     public float[] BandBuffer => bandBuffer;
+    public float[] BandDb => bandDb;
+    public float[] BandCenterFrequencies => bandCenterHz;
 
     private void Start()
     {
@@ -70,176 +81,156 @@ public class FMODAudioVisualizer : MonoBehaviour
             return;
         }
 
-        if (windowSize < 64)
-        {
-            UnityEngine.Debug.LogError("FFT window size must be at least 64.", this);
-            enabled = false;
-            return;
-        }
-
+        windowSize = Mathf.Clamp(Mathf.ClosestPowerOfTwo(windowSize), 64, 8192);
         numberOfBands = Mathf.Max(1, numberOfBands);
+        minDb = Mathf.Min(minDb, maxDb - 0.001f);
+        maxDb = Mathf.Max(maxDb, minDb + 0.001f);
 
         samples = new float[windowSize];
         frequencyBands = new float[numberOfBands];
+        bandDb = new float[numberOfBands];
         bandBuffer = new float[numberOfBands];
         bufferDecrease = new float[numberOfBands];
-        samplesPerBand = new int[numberOfBands];
+        bandCenterHz = new float[numberOfBands];
+        bandTiltDb = new float[numberOfBands];
+        bandFirstBin = new int[numberOfBands];
+        bandLastBin = new int[numberOfBands];
+        bandCenterBin = new float[numberOfBands];
 
-        CalculateBandSizes();
+        ReadSampleRate();
+        CalculateBandLayout();
         SpawnMeters();
-
         InitializeFMOD();
-
         initialized = true;
+    }
+
+    private void ReadSampleRate()
+    {
+        FMOD.SPEAKERMODE speakerMode;
+        int rawSpeakers;
+        int rate;
+        FMOD.RESULT result = RuntimeManager.CoreSystem.getSoftwareFormat(
+            out rate, out speakerMode, out rawSpeakers);
+
+        if (result == FMOD.RESULT.OK && rate > 0)
+            sampleRate = rate;
+        else
+            UnityEngine.Debug.LogWarning("Could not read FMOD sample rate, assuming " + sampleRate + " Hz.", this);
     }
 
     private void InitializeFMOD()
     {
         audioEvent = RuntimeManager.CreateInstance(eventPath);
-
         if (!audioEvent.isValid())
         {
             UnityEngine.Debug.LogError("Failed to create FMOD event.", this);
             return;
         }
 
-        FMOD.RESULT result = audioEvent.set3DAttributes(
-            RuntimeUtils.To3DAttributes(transform));
-
+        FMOD.RESULT result = audioEvent.set3DAttributes(RuntimeUtils.To3DAttributes(transform));
         if (result != FMOD.RESULT.OK)
         {
-            UnityEngine.Debug.LogError("Failed to set event attributes: " + result);
+            UnityEngine.Debug.LogError("Failed to set event attributes: " + result, this);
             return;
         }
 
-        result = RuntimeManager.CoreSystem.createDSPByType(
-            DSP_TYPE.FFT, out fftDSP);
-
+        result = RuntimeManager.CoreSystem.createDSPByType(DSP_TYPE.FFT, out fftDSP);
         if (result != FMOD.RESULT.OK)
         {
-            UnityEngine.Debug.LogError("Failed to create FFT DSP: " + result);
+            UnityEngine.Debug.LogError("Failed to create FFT DSP: " + result, this);
             return;
         }
 
-        result = fftDSP.setParameterInt(
-            (int)DSP_FFT.WINDOW, (int)windowShape);
-
+        result = fftDSP.setParameterInt((int)DSP_FFT.WINDOW, (int)windowShape);
         if (result != FMOD.RESULT.OK)
-            UnityEngine.Debug.LogError("Failed to set FFT window: " + result);
+            UnityEngine.Debug.LogError("Failed to set FFT window: " + result, this);
 
-        result = fftDSP.setParameterInt(
-            (int)DSP_FFT.WINDOWSIZE, windowSize * 2);
-
+        result = fftDSP.setParameterInt((int)DSP_FFT.WINDOWSIZE, windowSize * 2);
         if (result != FMOD.RESULT.OK)
-            UnityEngine.Debug.LogError("Failed to set FFT size: " + result);
+            UnityEngine.Debug.LogError("Failed to set FFT size: " + result, this);
 
         if (playOnAwake)
             PlayFMODEvent();
     }
 
-    private void CalculateBandSizes()
+    private void CalculateBandLayout()
     {
-        // Divide the available positive-frequency bins into
-        // approximately logarithmic bands.
-        int totalBins = windowSize;
-        int previousBin = 0;
+        float nyquist = sampleRate * 0.5f;
+        float minimum = Mathf.Max(1f, minFrequency);
+        float maximum = Mathf.Min(maxFrequency, nyquist);
+        if (maximum <= minimum)
+        {
+            minimum = 20f;
+            maximum = Mathf.Min(20000f, nyquist);
+        }
+
+        binWidth = sampleRate / (windowSize * 2f);
+        float ratio = maximum / minimum;
+        float referenceFrequency = Mathf.Max(1f, tiltReferenceHz);
 
         for (int i = 0; i < numberOfBands; i++)
         {
-            float startFraction = (float)i / numberOfBands;
-            float endFraction = (float)(i + 1) / numberOfBands;
-
-            int startBin = Mathf.RoundToInt(
-                Mathf.Pow(totalBins, startFraction));
-
-            int endBin = Mathf.RoundToInt(
-                Mathf.Pow(totalBins, endFraction));
-
-            startBin = Mathf.Clamp(startBin, previousBin, totalBins - 1);
-            endBin = Mathf.Clamp(endBin, startBin + 1, totalBins);
-
-            samplesPerBand[i] = endBin - startBin;
-            previousBin = endBin;
+            float low = minimum * Mathf.Pow(ratio, (float)i / numberOfBands);
+            float high = minimum * Mathf.Pow(ratio, (float)(i + 1) / numberOfBands);
+            float center = Mathf.Sqrt(low * high);
+            bandCenterHz[i] = center;
+            bandTiltDb[i] = tiltDbPerOctave * Mathf.Log(center / referenceFrequency, 2f);
+            bandFirstBin[i] = Mathf.Max(1, Mathf.CeilToInt(low / binWidth));
+            bandLastBin[i] = Mathf.Min(windowSize - 1, Mathf.FloorToInt(high / binWidth));
+            bandCenterBin[i] = center / binWidth;
         }
     }
 
-    
-private void SpawnMeters()
-{
-    meters = new GameObject[numberOfBands];
-    initialScales = new Vector3[numberOfBands];
-    initialPositionsY = new float[numberOfBands];
-
-    for (int i = 0; i < numberOfBands; i++)
+    private void SpawnMeters()
     {
-        Vector3 position = transform.position +
-            transform.right * (i * spaceBetweenMeters);
+        meters = new GameObject[numberOfBands];
+        initialScales = new Vector3[numberOfBands];
+        initialPositionsY = new float[numberOfBands];
 
-        meters[i] = Instantiate(
-            meterPrefab,
-            position,
-            transform.rotation,
-            transform
-        );
-
-        initialScales[i] = meters[i].transform.localScale;
-        initialPositionsY[i] = meters[i].transform.localPosition.y;
-
-        // Generate the HSB spectrum, starting at red.
-        float hue = (float)i / numberOfBands;
-        Color bandColor = Color.HSVToRGB(hue, 1f, 1f);
-
-        // Apply the color to all renderers on the meter and its children.
-        Renderer[] renderers =
-            meters[i].GetComponentsInChildren<Renderer>(true);
-
-        foreach (Renderer rend in renderers)
+        for (int i = 0; i < numberOfBands; i++)
         {
-            rend.material.color = bandColor;
+            Vector3 position = transform.position + transform.right * (i * spaceBetweenMeters);
+            meters[i] = Instantiate(meterPrefab, position, transform.rotation, transform);
+            initialScales[i] = meters[i].transform.localScale;
+            initialPositionsY[i] = meters[i].transform.localPosition.y;
+            Color bandColor = Color.HSVToRGB((float)i / numberOfBands, 1f, 1f);
+            Renderer[] renderers = meters[i].GetComponentsInChildren<Renderer>(true);
+            foreach (Renderer renderer in renderers)
+                renderer.material.color = bandColor;
         }
     }
-}
-
 
     private void Update()
     {
         if (!initialized || !fftDSP.hasHandle())
             return;
-
         AttachDSPIfReady();
-
         if (!dspAttached)
             return;
-
         ReadSpectrum();
         CalculateFrequencyBands();
         UpdateMeters();
+        if (showDebugLogs)
+            LogPeakBand();
     }
 
     private void AttachDSPIfReady()
     {
         if (dspAttached)
             return;
-
-        FMOD.RESULT result = audioEvent.getChannelGroup(
-            out channelGroup);
-
+        FMOD.RESULT result = audioEvent.getChannelGroup(out channelGroup);
         if (result != FMOD.RESULT.OK || !channelGroup.hasHandle())
             return;
-
-        result = channelGroup.addDSP(
-            CHANNELCONTROL_DSP_INDEX.HEAD, fftDSP);
-
+        result = channelGroup.addDSP(CHANNELCONTROL_DSP_INDEX.HEAD, fftDSP);
         if (result == FMOD.RESULT.OK)
         {
             dspAttached = true;
-
             if (showDebugLogs)
                 UnityEngine.Debug.Log("FFT DSP attached successfully.", this);
         }
         else if (showDebugLogs)
         {
-            UnityEngine.Debug.LogWarning("Waiting for event channel group: " + result);
+            UnityEngine.Debug.LogWarning("Waiting for event channel group: " + result, this);
         }
     }
 
@@ -247,65 +238,62 @@ private void SpawnMeters()
     {
         IntPtr data;
         uint length;
-
-        FMOD.RESULT result = fftDSP.getParameterData(
-            (int)DSP_FFT.SPECTRUMDATA,
-            out data,
-            out length);
-
+        FMOD.RESULT result = fftDSP.getParameterData((int)DSP_FFT.SPECTRUMDATA, out data, out length);
         if (result != FMOD.RESULT.OK || data == IntPtr.Zero)
             return;
 
-        DSP_PARAMETER_FFT fftData =
-            Marshal.PtrToStructure<DSP_PARAMETER_FFT>(data);
-
-        if (fftData.numchannels <= 0 ||
-            fftData.length <= 0 ||
-            fftData.spectrum == null)
+        DSP_PARAMETER_FFT fftData = Marshal.PtrToStructure<DSP_PARAMETER_FFT>(data);
+        if (fftData.numchannels <= 0 || fftData.length <= 0 || fftData.spectrum == null)
             return;
 
         spectrumLength = Mathf.Min(windowSize, fftData.length);
-
         for (int i = 0; i < spectrumLength; i++)
         {
             float total = 0f;
-
             for (int channel = 0; channel < fftData.numchannels; channel++)
                 total += fftData.spectrum[channel][i];
-
             samples[i] = total / fftData.numchannels;
         }
-
         for (int i = spectrumLength; i < samples.Length; i++)
             samples[i] = 0f;
     }
 
+    private float BinPower(int bin)
+    {
+        float amplitude = samples[bin];
+        return amplitude * amplitude;
+    }
+
     private void CalculateFrequencyBands()
     {
-        int binsPerBand = Mathf.Max(1, windowSize / numberOfBands);
-        int startBin = 0;
+        if (spectrumLength <= 0)
+            return;
 
+        int lastValid = spectrumLength - 1;
         for (int band = 0; band < numberOfBands; band++)
         {
-            int endBin = band == numberOfBands - 1
-                ? spectrumLength
-                : Mathf.Min(spectrumLength, startBin + binsPerBand);
+            int first = bandFirstBin[band];
+            int last = Mathf.Min(bandLastBin[band], lastValid);
+            float power;
 
-            float sum = 0f;
-            int count = 0;
-
-            for (int bin = startBin; bin < endBin; bin++)
+            if (last >= first)
             {
-                // Weight higher bins slightly more.
-                sum += samples[bin] * (bin + 1);
-                count++;
+                float sum = 0f;
+                for (int bin = first; bin <= last; bin++)
+                    sum += BinPower(bin);
+                power = sum / (last - first + 1);
+            }
+            else
+            {
+                float position = bandCenterBin[band];
+                int firstBin = Mathf.Clamp(Mathf.FloorToInt(position), 0, lastValid);
+                int secondBin = Mathf.Min(firstBin + 1, lastValid);
+                power = Mathf.Lerp(BinPower(firstBin), BinPower(secondBin), Mathf.Clamp01(position - firstBin));
             }
 
-            frequencyBands[band] = count > 0
-                ? (sum / count) * meterIntensity
-                : 0f;
-
-            startBin = endBin;
+            float db = 10f * Mathf.Log10(power + 1e-12f) + bandTiltDb[band] + dbOffset;
+            bandDb[band] = db;
+            frequencyBands[band] = Mathf.InverseLerp(minDb, maxDb, db);
         }
     }
 
@@ -321,34 +309,40 @@ private void SpawnMeters()
             else
             {
                 bandBuffer[i] -= bufferDecrease[i] * Time.deltaTime * 60f;
-                bufferDecrease[i] *= Mathf.Pow(
-                    bufferAccelRate, Time.deltaTime * 60f);
-
+                bufferDecrease[i] *= Mathf.Pow(bufferAccelRate, Time.deltaTime * 60f);
                 bandBuffer[i] = Mathf.Max(0f, bandBuffer[i]);
             }
 
-            float height = startScale +
-                bandBuffer[i] * scaleMultiplier;
-
+            float height = startScale + bandBuffer[i] * scaleMultiplier;
             Transform meterTransform = meters[i].transform;
-
             Vector3 scale = initialScales[i];
             scale.y = height;
             meterTransform.localScale = scale;
-
             Vector3 position = meterTransform.localPosition;
-            position.y = initialPositionsY[i] +
-                (height - initialScales[i].y) * 0.5f;
-
+            position.y = initialPositionsY[i] + (height - initialScales[i].y) * 0.5f;
             meterTransform.localPosition = position;
         }
+    }
+
+    private void LogPeakBand()
+    {
+        debugTimer += Time.deltaTime;
+        if (debugTimer < 1f)
+            return;
+        debugTimer = 0f;
+        int peak = 0;
+        for (int i = 1; i < numberOfBands; i++)
+        {
+            if (bandDb[i] > bandDb[peak])
+                peak = i;
+        }
+        UnityEngine.Debug.Log("Loudest band: " + bandCenterHz[peak].ToString("F0") + " Hz at " + bandDb[peak].ToString("F1") + " dB", this);
     }
 
     public void PlayFMODEvent()
     {
         if (!audioEvent.isValid())
             return;
-
         audioEvent.start();
         eventStarted = true;
     }
@@ -357,7 +351,6 @@ private void SpawnMeters()
     {
         if (!audioEvent.isValid())
             return;
-
         audioEvent.stop(FMOD.Studio.STOP_MODE.ALLOWFADEOUT);
         eventStarted = false;
     }
@@ -366,7 +359,6 @@ private void SpawnMeters()
     {
         if (!audioEvent.isValid())
             return;
-
         bool paused;
         audioEvent.getPaused(out paused);
         audioEvent.setPaused(!paused);
@@ -378,17 +370,13 @@ private void SpawnMeters()
         {
             if (dspAttached && channelGroup.hasHandle())
                 channelGroup.removeDSP(fftDSP);
-
             fftDSP.release();
         }
-
         if (audioEvent.isValid())
         {
             if (eventStarted)
                 audioEvent.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-
             audioEvent.release();
         }
     }
 }
-

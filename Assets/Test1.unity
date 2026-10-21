@@ -119,60 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &33461414
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 33461416}
-  - component: {fileID: 33461415}
-  m_Layer: 0
-  m_Name: Data
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &33461415
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 33461414}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e8dfa4acad4f624fb27e3bf6db6a700, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GetFMODSpectrumData
-  _eventPath:
-    Guid:
-      Data1: -1705008924
-      Data2: 1175830992
-      Data3: 1508384393
-      Data4: 446525341
-    Path: event:/Just be around guitars+piano
-  _windowSize: 64
-  _windowShape: 3
-  _samples: []
---- !u!4 &33461416
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 33461414}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: -0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &283689576
 GameObject:
   m_ObjectHideFlags: 0
@@ -331,21 +277,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FMODAudioVisualizer
   eventPath:
     Guid:
-      Data1: -1705008924
-      Data2: 1175830992
-      Data3: 1508384393
-      Data4: 446525341
-    Path: event:/Just be around guitars+piano
+      Data1: -1040407189
+      Data2: 1337044262
+      Data3: -450578762
+      Data4: 1603013698
+    Path: event:/Nic Hanson drums
   playOnAwake: 1
-  windowSize: 64
+  windowSize: 256
   windowShape: 3
-  meterPrefab: {fileID: 5732453800594793328, guid: 3995e5705d080684b95c5c6e955b3ed2, type: 3}
+  minFrequency: 20
+  maxFrequency: 20000
   numberOfBands: 30
-  meterIntensity: 10
+  minDb: -100
+  maxDb: 0
+  dbOffset: 0
+  tiltDbPerOctave: 4.5
+  tiltReferenceHz: 1000
+  meterPrefab: {fileID: 5732453800594793328, guid: 3995e5705d080684b95c5c6e955b3ed2, type: 3}
   scaleMultiplier: 10
   startScale: 1
   spaceBetweenMeters: 1
-  bufferStartSpeed: 0.001
+  bufferStartSpeed: 0.005
   bufferAccelRate: 1.2
   showDebugLogs: 0
 --- !u!4 &1038080519
@@ -495,7 +447,7 @@ Transform:
   m_GameObject: {fileID: 1108432408}
   serializedVersion: 2
   m_LocalRotation: {x: 0.20858394, y: 0.32978502, z: -0.07495922, w: 0.91766864}
-  m_LocalPosition: {x: -15.2, y: 18.7, z: -23.1}
+  m_LocalPosition: {x: -5.12, y: 11.11, z: -10.88}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -508,7 +460,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1108432408}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 86c6556701af9e04380698b89f691b6e, type: 3}
   m_Name: 
@@ -521,5 +473,4 @@ SceneRoots:
   m_Roots:
   - {fileID: 283689579}
   - {fileID: 1038080519}
-  - {fileID: 33461416}
   - {fileID: 1108432412}
