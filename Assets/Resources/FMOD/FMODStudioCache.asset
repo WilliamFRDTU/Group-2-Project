@@ -15,10 +15,58 @@ MonoBehaviour:
   Path: ../Project1/Build/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639280151503757082
+  lastModified: 639281959014091892
   FileSizes:
   - Name: Desktop
-    Value: 682976
+    Value: 684896
+  Exists: 1
+--- !u!114 &-8783077806649307660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/Nic Hanson drums/TrebleBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: TrebleBoost
+  StudioPath: 
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 667303204
+    data2: 1415185335
+  Type: 0
+  IsGlobal: 1
+  Labels: []
+  Exists: 1
+--- !u!114 &-7756840421108615867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/Nic Hanson drums/MidBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: MidBoost
+  StudioPath: 
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 3857881261
+    data2: 1249940829
+  Type: 0
+  IsGlobal: 1
+  Labels: []
   Exists: 1
 --- !u!114 &-5499372405100963496
 MonoBehaviour:
@@ -47,6 +95,54 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 15718
+--- !u!114 &-4039499880168183796
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/TrebleBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: TrebleBoost
+  StudioPath: parameter:/TrebleBoost
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 667303204
+    data2: 1415185335
+  Type: 0
+  IsGlobal: 1
+  Labels: []
+  Exists: 1
+--- !u!114 &-3204899614308715715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/BassBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: BassBoost
+  StudioPath: parameter:/BassBoost
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 3509545710
+    data2: 2784699407
+  Type: 0
+  IsGlobal: 1
+  Labels: []
+  Exists: 1
 --- !u!114 &-1953625049682058295
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89,10 +185,10 @@ MonoBehaviour:
   Path: ../Project1/Build/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639280151503822606
+  lastModified: 639281959014127381
   FileSizes:
   - Name: Desktop
-    Value: 912
+    Value: 1056
   Exists: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -113,16 +209,71 @@ MonoBehaviour:
   - {fileID: -5499372405100963496}
   - {fileID: 5170391109444077153}
   - {fileID: -1953625049682058295}
-  EditorParameters: []
+  EditorParameters:
+  - {fileID: -3204899614308715715}
+  - {fileID: 4245975783392686458}
+  - {fileID: -4039499880168183796}
   MasterBanks:
   - {fileID: -8960925662339775825}
   StringsBanks:
   - {fileID: -1896354743423815326}
   cacheVersion: 132096
-  cacheTime: 639280151503822606
+  cacheTime: 639281959014127381
   SerializableEventsDict:
   - key: event:/In the world strings+piano+guitar
     index: 0
+  - key: event:/Nic Hanson drums
+    index: 1
+  - key: event:/Just be around guitars+piano
+    index: 2
+--- !u!114 &778129464674994003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/Nic Hanson drums/BassBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: BassBoost
+  StudioPath: 
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 3509545710
+    data2: 2784699407
+  Type: 0
+  IsGlobal: 1
+  Labels: []
+  Exists: 1
+--- !u!114 &4245975783392686458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fecb8ef7f94ca804a8ab72049b86782e, type: 3}
+  m_Name: parameter:/MidBoost
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorParamRef
+  Name: MidBoost
+  StudioPath: parameter:/MidBoost
+  Min: -10
+  Max: 10
+  Default: 0
+  ID:
+    data1: 3857881261
+    data2: 1249940829
+  Type: 0
+  IsGlobal: 1
+  Labels: []
+  Exists: 1
 --- !u!114 &5170391109444077153
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -146,7 +297,10 @@ MonoBehaviour:
   IsStream: 1
   Is3D: 1
   IsOneShot: 1
-  Parameters: []
+  Parameters:
+  - {fileID: 778129464674994003}
+  - {fileID: -8783077806649307660}
+  - {fileID: -7756840421108615867}
   MinDistance: 1
   MaxDistance: 20
   Length: 12492

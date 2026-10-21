@@ -57,10 +57,10 @@ public class FMODAudioVisualizer : MonoBehaviour
     private int[] bandFirstBin;
     private int[] bandLastBin;
     private float[] bandCenterBin;
-    private float[] frequencyBands;
-    private float[] bandDb;
-    private float[] bandBuffer;
-    private float[] bufferDecrease;
+    private float[] frequencyBands; //Contains normalized values (0-1) for each frequency band
+    private float[] bandDb;         //Contains dB values for each frequency band
+    private float[] bandBuffer;     //Contains smoothed values (0-1) for each frequency band
+    private float[] bufferDecrease; //Contains the current decrease speed for each frequency band
     private GameObject[] meters;
     private Vector3[] initialScales;
     private float[] initialPositionsY;
@@ -301,7 +301,7 @@ public class FMODAudioVisualizer : MonoBehaviour
     {
         for (int i = 0; i < numberOfBands; i++)
         {
-            if (frequencyBands[i] > bandBuffer[i])
+            if (eventStarted && frequencyBands[i] > bandBuffer[i])
             {
                 bandBuffer[i] = frequencyBands[i];
                 bufferDecrease[i] = bufferStartSpeed;
