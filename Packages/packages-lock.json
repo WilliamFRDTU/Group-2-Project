@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.fmod.fmod-for-unity.v204": {
-      "version": "file:C:/Users/Frederik Rasmussen/Downloads/fmodstudio20400.tgz",
+      "version": "file:C:/Users/CooL/Downloads/fmodstudio20400.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {}
@@ -85,6 +85,16 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.postprocessing": {
+      "version": "3.5.4",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.physics": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.profiling.core": {
       "version": "1.0.3",
       "depth": 2,
@@ -101,6 +111,30 @@
         "com.unity.collections": "2.4.3",
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.profiling.core": "1.0.3"
+      }
+    },
+    "com.unity.render-pipelines.high-definition": {
+      "version": "17.6.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.video": "1.0.0",
+        "com.unity.modules.animation": "1.0.0",
+        "com.unity.modules.imageconversion": "1.0.0",
+        "com.unity.modules.physics": "1.0.0",
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.render-pipelines.core": "17.6.0",
+        "com.unity.shadergraph": "17.6.0",
+        "com.unity.visualeffectgraph": "17.6.0",
+        "com.unity.render-pipelines.high-definition-config": "17.6.0"
+      }
+    },
+    "com.unity.render-pipelines.high-definition-config": {
+      "version": "17.6.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.render-pipelines.core": "17.6.0"
       }
     },
     "com.unity.render-pipelines.universal": {
@@ -178,6 +212,15 @@
         "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.physics2d": "1.0.0",
         "com.unity.modules.physics": "1.0.0"
+      }
+    },
+    "com.unity.visualeffectgraph": {
+      "version": "17.6.0",
+      "depth": 1,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.shadergraph": "17.6.0",
+        "com.unity.render-pipelines.core": "17.6.0"
       }
     },
     "com.unity.visualscripting": {
