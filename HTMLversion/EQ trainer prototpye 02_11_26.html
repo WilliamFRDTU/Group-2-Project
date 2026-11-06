@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Parametric EQ ear trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1B2330; --muted:#5D6878; --line:#D3D9E1; --grid:#E3E8EE;
+  --accent:#2B47C9; --accent-ink:#FFFFFF; --guess:#B87908; --ok:#24804F; --bad:#B93A26; --focus:#2B47C9;
+  --info-bg:#E7ECFB; --ok-bg:#E3F3EA; --bad-bg:#FAE8E4; --warn-bg:#FBF0DA; --low:#B4531A; --mid:#24804F; --high:#2B47C9;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141920; --panel:#1C232D; --ink:#E5E9EF; --muted:#96A1B0; --line:#313B48; --grid:#252E39;
+    --accent:#7F95FF; --accent-ink:#0F1420; --guess:#E2AD44; --ok:#55C08A; --bad:#F07A62; --focus:#9DAEFF;
+    --info-bg:#1F2846; --ok-bg:#16301F; --bad-bg:#3A1F1A; --warn-bg:#352911; --low:#F0A06A; --mid:#55C08A; --high:#8EA2FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141920; --panel:#1C232D; --ink:#E5E9EF; --muted:#96A1B0; --line:#313B48; --grid:#252E39;
+  --accent:#7F95FF; --accent-ink:#0F1420; --guess:#E2AD44; --ok:#55C08A; --bad:#F07A62; --focus:#9DAEFF;
+    --info-bg:#1F2846; --ok-bg:#16301F; --bad-bg:#3A1F1A; --warn-bg:#352911; --low:#F0A06A; --mid:#55C08A; --high:#8EA2FF;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+main{max-width:880px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.15;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em}
+h2{font-size:1.12rem;margin:0 0 10px;font-weight:600}
+p{margin:0 0 12px;max-width:68ch}
+.lede{color:var(--muted);margin-bottom:24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stack>*+*{margin-top:22px}
+label{font-weight:500}
+input[type=text],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+input[type=text]{width:320px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.choice{display:block;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--bg)}
+.choice:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.choice input{margin:0 8px 0 0;accent-color:var(--accent)}
+.choice small{display:block;color:var(--muted);font-weight:400;margin-top:2px;padding-left:22px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:4px}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 16px;font-weight:500}
+button:hover:not(:disabled){border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:.9rem}
+.hidden{display:none!important}
+details{border-top:1px solid var(--line);padding-top:16px}
+summary{cursor:pointer;font-weight:600}
+details .inner{margin-top:14px;display:grid;gap:14px}
+.files{display:grid;gap:8px}
+.files label{font-weight:400}
+
+/* trial */
+.topline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-bottom:14px}
+.axes{display:grid;grid-template-columns:auto auto 1fr;gap:6px 12px;align-items:center;font-size:.92rem;margin-bottom:16px}
+.axes .k{color:var(--muted)}
+.meter{display:flex;gap:3px}
+.meter span{width:18px;height:10px;border-radius:2px;background:var(--grid);border:1px solid var(--line)}
+.meter span.on{background:var(--accent);border-color:var(--accent)}
+.axes .v{font-weight:600}
+.practice{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.instr{margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;padding:10px 18px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.monitor{margin-bottom:14px}
+canvas{display:block;width:100%}
+#plot{height:clamp(190px,34vw,270px)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.85rem;color:var(--muted);min-height:1.4em;margin:4px 0 0}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.freqwrap{position:relative;margin-top:6px}
+#freq{display:block;width:100%;margin:0;height:28px}
+.ticks{position:relative;height:18px;font-size:.75rem;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.ctrlrow{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+@media (min-width:640px){.ctrlrow{grid-template-columns:auto auto 1fr}}
+.ctrl h3{font-size:.9rem;font-weight:600;margin:0 0 6px}
+.readout{font-weight:700;font-size:1.05rem}
+.feedback{min-height:52px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.msg{font-weight:500}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+
+/* summary */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
+.stat{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.stat .v{font-size:1.6rem;font-weight:700;line-height:1.2}
+.stat .k{color:var(--muted);font-size:.88rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin-bottom:18px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+#lanes{height:330px}
+textarea{width:100%;height:150px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+@media (prefers-reduced-motion:no-preference){button{transition:background-color .12s,border-color .12s}}
+
+/* v3 additions */
+.steps{display:grid;gap:12px}
+.step{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.step.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.step .num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--panel);border:1px solid var(--line)}
+.step.done .num{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.step h3{margin:0;font-size:1rem}
+.step p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.step .status{font-size:.85rem;color:var(--muted)}
+.badge{display:inline-block;font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);margin-left:8px;vertical-align:middle}
+#plot{cursor:crosshair;touch-action:none}
+#plot.locked{cursor:default}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 22px;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.knob label{display:flex;justify-content:space-between;font-size:.88rem;font-weight:600;margin-bottom:4px}
+.knob label span{font-weight:700;color:var(--guess)}
+.knob input{width:100%}
+.answerrow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;margin-top:14px}
+.intro{border-left:3px solid var(--accent);padding:6px 0 6px 14px;margin-bottom:14px}
+.intro b{display:block;margin-bottom:2px}
+.sendbox{padding:14px 16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:18px}
+.sendstatus{padding:10px 14px;border-radius:10px;border:1px solid var(--line);margin-bottom:16px}
+.sendstatus.ok{border-color:var(--ok);color:var(--ok)}
+.sendstatus.bad{border-color:var(--bad);color:var(--bad)}
+
+/* v5: one-screen trial layout, Corey's labels, pop-ups */
+body.intrial main{padding:10px 14px;max-width:1000px}
+body.intrial main > h1, body.intrial main > .lede{display:none}
+#trial:not(.hidden){display:flex;flex-direction:column;gap:8px;padding:12px 16px;
+  height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:520px}
+.tbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 18px;font-size:.92rem}
+#trial .axes{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0;font-size:.85rem}
+.ax{display:inline-flex;align-items:center;gap:6px}
+.ax .k{color:var(--muted)}
+#trial .meter span{width:12px;height:8px}
+.tline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:.92rem;color:var(--muted)}
+.tline b{color:var(--ink)}
+button.link{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:.9rem;font-weight:500}
+#trial .monitor{margin:0;gap:8px 12px}
+#trial .seg button{padding:7px 14px}
+.plotwrap{position:relative;flex:1 1 auto;min-height:140px}
+.plotwrap canvas{position:absolute;inset:0;width:100%;height:100%!important}
+#trial .legend{margin:0;min-height:1.2em;font-size:.82rem}
+#trial .strip{margin:0;padding:8px 14px;gap:6px 22px}
+#qSl:disabled{opacity:.55}
+.bottom{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;border-top:1px solid var(--line);padding-top:8px}
+.bottom > .row{margin-left:auto}
+.bottom .confwrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.9rem}
+#msg{font-size:.88rem}
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(10,14,22,.55)}
+.modal.hidden{display:none}
+.modal-card{width:100%;max-width:520px;max-height:90dvh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.modal-card h2{margin:0 0 4px;font-size:1.35rem}
+.modal-card .kicker{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.modal-card p{margin:8px 0}
+.modal-card h2.ok{color:var(--ok)} .modal-card h2.bad{color:var(--bad)}
+.modal-btns{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:18px}
+.modal-btns button:first-child:not(.primary):not(:only-child){margin-right:auto}
+.fbt{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:.95rem}
+.fbt th,.fbt td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+.fbt td.good{color:var(--ok);font-weight:600} .fbt td.wrong{color:var(--bad);font-weight:600}
+.scoreline{font-size:1.05rem;font-weight:600}
+@media (max-height:600px){#trial:not(.hidden){height:auto}}
+
+/* v6: colour for information blocks */
+.tline{background:var(--info-bg);border-left:4px solid var(--accent);border-radius:8px;padding:6px 12px;color:var(--ink)}
+.tline b{color:var(--accent)}
+#msg:not(:empty){background:var(--warn-bg);color:var(--ink);border-left:4px solid var(--guess);border-radius:6px;padding:3px 10px}
+.modal-card{border-top:6px solid var(--accent)}
+.modal-card.ok{border-top-color:var(--ok)} .modal-card.bad{border-top-color:var(--bad)}
+.modal-card .kicker{display:inline-block;background:var(--info-bg);color:var(--accent);border-radius:999px;padding:3px 10px;text-transform:none;letter-spacing:0;font-size:.8rem}
+.modal-card.ok .kicker{background:var(--ok-bg);color:var(--ok)} .modal-card.bad .kicker{background:var(--bad-bg);color:var(--bad)}
+.callout{background:var(--info-bg);border-left:4px solid var(--accent);border-radius:8px;padding:8px 12px;margin:10px 0}
+.callout.tip{background:var(--warn-bg);border-left-color:var(--guess)}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.chip{border-radius:10px;padding:8px 10px;border:2px solid currentColor;font-weight:600;line-height:1.3}
+.chip small{display:block;font-weight:400;color:var(--ink)}
+.chip.low{color:var(--low)} .chip.mid{color:var(--mid)} .chip.high{color:var(--high)}
+.chip.boost{color:var(--ok)} .chip.cut{color:var(--bad)}
+.canhear{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.canhear span{border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:600}
+.canhear .y{background:var(--ok-bg);color:var(--ok)} .canhear .n{background:var(--bad-bg);color:var(--bad);text-decoration:line-through}
+.fbt th{background:var(--info-bg)} .fbt tr:first-child th:first-child{background:transparent}
+.scoreline{display:inline-block;border-radius:8px;padding:4px 12px;background:var(--info-bg)}
+.modal-card.ok .scoreline{background:var(--ok-bg);color:var(--ok)} .modal-card.bad .scoreline{background:var(--bad-bg);color:var(--bad)}
+.step.next{background:var(--info-bg)}
+.sendbox{background:var(--info-bg)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Parametric EQ ear trainer</h1>
+  <p class="lede">Learn to hear what an EQ is doing. You’ll listen to sounds with a hidden EQ applied and set your own EQ to match, using the four exercises from Jason Corey’s technical ear training method.</p>
+
+  <!-- HOME -->
+  <section id="home" class="panel stack">
+    <div class="row">
+      <div class="field"><label for="pid">Participant ID</label><input id="pid" type="text" placeholder="The ID your researcher gave you" autocomplete="off"></div>
+    </div>
+    <div id="aboutBlock">
+      <h2>About you</h2>
+      <div class="row">
+        <div class="field"><label for="exp">Audio production experience</label>
+          <select id="exp"><option value="">Choose one</option><option>None</option><option>Under 1 year</option><option>1 to 3 years</option><option>3 to 10 years</option><option>More than 10 years</option></select></div>
+        <div class="field"><label for="phones">Headphones (make and model)</label><input id="phones" type="text" placeholder="e.g. Sennheiser HD 600"></div>
+      </div>
+    </div>
+    <div>
+      <h2>Level check</h2>
+      <p class="hint">Wear headphones. Play the test sound, set a comfortable level, then leave the volume alone.</p>
+      <div class="row">
+        <button id="testBtn">Play test sound</button>
+        <label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="0.4">
+      </div>
+    </div>
+    <div>
+      <h2>Your sessions</h2>
+      <p class="hint" id="progressHint">Enter your participant ID to see your progress.</p>
+      <div class="field" id="lenRow" style="margin-bottom:14px"><label for="lenSel">Training session length</label>
+        <select id="lenSel"><option value="15">15 minutes (36 exercises)</option><option value="25" selected>25 minutes (60 exercises)</option><option value="40">40 minutes (96 exercises)</option></select></div>
+      <p id="homeErr" class="msg bad hidden"></p>
+      <div class="steps" id="steps"></div>
+    </div>
+  </section>
+
+  <!-- TRIAL -->
+  <section id="trial" class="panel hidden">
+    <div class="tbar">
+      <span><b id="stageTxt"></b> <span id="trialTxt"></span> <span class="hint" id="sessionTxt"></span></span>
+      <div class="axes" id="axes" aria-label="Current exercise">
+        <span class="ax"><span class="k">Stimulus</span><span class="meter" id="mS"></span><b id="vS"></b></span>
+        <span class="ax"><span class="k">Task</span><span class="meter" id="mT"></span><b id="vT"></b></span>
+        <span class="ax"><span class="k">Change</span><span class="meter" id="mP"></span><b id="vP"></b></span>
+      </div>
+    </div>
+    <div class="tline"><span id="intro"></span><button class="link" id="helpBtn">How to play</button></div>
+    <div class="monitor row">
+      <div class="seg" role="group" aria-label="Listen to">
+        <button id="mF" data-m="f">Bypass</button><button id="mQ" data-m="q">Question</button><button id="mA" data-m="a">Your Response</button>
+      </div>
+      <button id="pauseBtn">Pause</button>
+      <span class="row" style="gap:8px"><label for="vol2" class="hint">Output</label><input id="vol2" type="range" min="0" max="1" step="0.01" value="0.4" style="width:110px"></span>
+      <span class="msg" id="msg"></span>
+    </div>
+    <div class="plotwrap"><canvas id="plot" aria-label="EQ curve. Drag the dot to set frequency and gain."></canvas></div>
+    <div class="legend" id="legend"></div>
+    <div class="strip" aria-label="Your Response">
+      <div class="knob"><label for="freqSl">Freq <span id="fOut"></span></label><input id="freqSl" type="range" min="0" max="8" step="1"></div>
+      <div class="knob"><label for="gainSl">Gain <span id="gOut"></span></label><input id="gainSl" type="range" min="0" max="2" step="1"></div>
+      <div class="knob"><label for="qSl">Q <span id="qOut"></span></label><input id="qSl" type="range" min="0" max="6" step="1" disabled title="Q is fixed at 2 for this training, as in Corey’s trainer"></div>
+    </div>
+    <div class="bottom">
+      <div class="confwrap" id="confRow">
+        <span style="font-weight:600">How sure are you?</span>
+        <div class="seg" id="confSeg" role="group" aria-label="Confidence from 1, a guess, to 5, certain"></div>
+        <span class="hint">1 = a guess, 5 = certain</span>
+      </div>
+      <span class="row"><button id="endBtn">End session</button><button id="goBtn" class="primary" disabled>Check Answer</button></span>
+    </div>
+  </section>
+
+  <!-- POP-UP -->
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="kicker" id="modalKicker"></div>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <div class="modal-btns" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <section id="summary" class="panel hidden">
+    <h2 id="sumTitle">Session complete</h2>
+    <div class="sendbox">
+      <p><b>Please send us your results.</b></p>
+      <ol style="margin:0 0 12px;padding-left:20px">
+        <li>Press <b>Download my results</b>. A file named <span id="fileName"></span> is saved to your Downloads folder.</li>
+        <li>Email that file as an attachment to <b id="emailTo"></b>.</li>
+      </ol>
+      <button id="dlBtn" class="primary">Download my results</button>
+      <span id="dlMsg" class="hint" style="margin-left:10px"></span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="tablewrap"><table id="byTask"></table></div>
+    <div id="lanesBlock">
+      <p class="hint" style="margin-bottom:6px">How the exercises changed during the session, with the score for each answer.</p>
+      <canvas id="lanes" aria-label="Exercise path and scores"></canvas>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button id="homeBtn">Back to my sessions</button>
+    </div>
+    <details style="margin-top:16px"><summary>Download not working? Show the data as text</summary>
+      <div class="inner"><button id="copyBtn" style="justify-self:start">Copy data</button><textarea id="csv" readonly></textarea></div>
+    </details>
+  </section>
+</main>
+<script>
+(() => {
+'use strict';
+/* ================= researcher settings: edit these two lines before sending the file ================= */
+const RESEARCH_EMAIL = 'FitzpatrickThomasAnthony@gmail.com';   // the address participants are asked to send their results file to
+const TRAINING_GROUP = '';                              // '' shows both trainings; 'adaptive' or 'structured' shows only that one
+const SESSION_MINUTES = 0;                              // 0 lets the participant choose 15, 25 or 40 minutes; or set 15, 25 or 40 to fix it
+
+/* ================= study structure ================= */
+const STIMS = ['Pink noise', 'Drum kit', 'Drums and bass', 'Full mix'];
+const TASKS = [
+  {id:'match', name:'Matching'}, {id:'memory', name:'Matching memory'},
+  {id:'flat', name:'Return to flat'}, {id:'absolute', name:'Absolute identification'}
+];
+// Corey's gain combinations, easiest to hardest
+const GAINS = [
+  {label:'+12 dB', vals:[12]}, {label:'±12 dB', vals:[-12,12]}, {label:'+9 dB', vals:[9]}, {label:'±9 dB', vals:[-9,9]},
+  {label:'+6 dB', vals:[6]}, {label:'±6 dB', vals:[-6,6]}, {label:'+3 dB', vals:[3]}, {label:'±3 dB', vals:[-3,3]}
+];
+const INSTR = {
+  match: 'Match the hidden EQ. Compare Question, Your Response and Bypass as often as you like.',
+  memory: 'Listen to the Question first: it is hidden as soon as you move a control.',
+  flat: 'Cancel the hidden EQ so Your Response sounds the same as Bypass.',
+  absolute: 'Name the setting. You can only hear the Question and Bypass, not your own EQ.',
+  sandbox: 'Free play: drag the dot and compare Your Response with Bypass.'
+};
+// pop-up pages shown at the start of familiarisation
+const EQ_INTRO = [
+  {title: 'What is an EQ?', html: '<p>An equaliser, or EQ, turns particular frequencies in a sound up or down.</p><div class="callout">It’s like the bass and treble controls on a stereo, but much more precise: you choose exactly <b>which part</b> of the sound to change, and <b>by how much</b>.</div>'},
+  {title: 'Frequency: where', html: '<p>Every sound is a mix of low, middle and high frequencies, measured in hertz (Hz). Move the EQ left for lower frequencies and right for higher ones.</p><div class="chips"><span class="chip low">Low: 63–250 Hz<small>Weight and rumble</small></span><span class="chip mid">Middle: 500 Hz–2 kHz<small>Body</small></span><span class="chip high">High: 4–16 kHz<small>Brightness and air</small></span></div><div class="callout tip"><b>Tip from Corey:</b> link octaves to vowel sounds. 250 Hz “oo” as in boot, 500 Hz “oh” as in tow, 1 kHz “ah” as in father, 2 kHz “eh” as in bet, 4 kHz “ee” as in beet.</div>'},
+  {title: 'Gain: how much', html: '<p>Gain is how much that frequency is turned up or down, in decibels (dB).</p><div class="chips"><span class="chip boost">▲ Boost<small>Above the line: that part gets louder</small></span><span class="chip cut">▼ Cut<small>Below the line: that part gets quieter</small></span></div><div class="callout">+12 dB is a big, obvious change. ±3 dB is subtle. Boosts are easier to hear than cuts, so the game starts with boosts.</div>'},
+  {title: 'Q: how wide', html: '<p>Q sets how wide the change is. A low Q changes a broad range of frequencies; a high Q changes a narrow one.</p><div class="callout">In this training <b>Q is fixed at 2</b>, as in Jason Corey’s ear trainer, so you only need to find the <b>frequency</b> and the <b>gain</b>.</div>'},
+  {title: 'Try it', html: '<p>Drag the dot on the curve to move the EQ, or use the Freq and Gain sliders.</p><div class="callout">Switch between <b>Your Response</b> and <b>Bypass</b> (no EQ) to hear what it does. Try a few frequencies, with boosts and cuts.</div><p>Press <b>Continue</b> when you’re ready for the exercises.</p>'}
+];
+const HELP_HTML = '<p><b>Listen:</b> Question is the hidden EQ, Your Response is your EQ, and Bypass is the sound with no EQ. Not every exercise lets you hear all three.</p><p><b>Answer:</b> drag the dot on the curve, or use the Freq and Gain sliders. Q is fixed at 2.</p><p><b>Then:</b> choose how sure you are, and press Check Answer.</p><p><b>Keys (as in Corey’s trainer):</b> Q = Bypass, W = Question, E = Your Response, Space switches between the two sounds that matter in each exercise. Up and down arrows change the frequency, left and right arrows change the gain, and 1 to 9 jump to the octave frequencies (1 = 63 Hz … 9 = 16 kHz). Enter checks your answer.</p>';
+const FREQS = [63,125,250,500,1000,2000,4000,8000,16000];
+const QS = [0.5, 0.7, 1, 1.4, 2, 2.8, 4];
+const TARGET_Q = 2, TARGET_QI = QS.indexOf(2);
+
+// training session lengths: minutes -> trials (about 25 s per trial; every length divides into the 12 structured blocks)
+const LENGTHS = [{min: 15, trials: 36}, {min: 25, trials: 60}, {min: 40, trials: 96}];
+const TEST_TRIALS = 16;
+const PATH = [[0,0,0],[0,0,1],[0,0,3],[1,0,3],[1,1,3],[1,1,5],[2,1,5],[2,2,5],[2,2,7],[3,2,7],[3,3,5],[3,3,7]];
+// structured training walks the whole path in every session, so each block gets session length / 12 trials
+
+const FAM = [
+  {sandbox: true, title: 'Meet the EQ'},
+  {cfg: [0,0,0], title: 'Exercise 1: matching', text: '<p>A hidden EQ has boosted one frequency of the pink noise. Listen to the <b>Question</b>, then move the dot until <b>Your Response</b> sounds the same. Compare with <b>Bypass</b> whenever you like.</p><p>In this exercise the gain is set for you, so you only need to find the frequency.</p>'},
+  {cfg: [0,0,1], title: 'Exercise 2: boost or cut', text: '<p>Now the hidden EQ might be a boost or a cut.</p><p>Find the frequency, then drag the dot above the line for a boost or below it for a cut.</p>'},
+  {cfg: [0,1,0], title: 'Exercise 3: matching memory', text: '<p>Listen carefully to the <b>Question</b> first.</p><p>As soon as you move a control, the Question is hidden and you match it from memory.</p>'},
+  {cfg: [0,2,0], title: 'Exercise 4: return to flat', text: '<p>The sound has been EQ’d. Set your EQ to cancel it, so <b>Your Response</b> sounds the same as <b>Bypass</b>.</p><p>To cancel a boost you need an equal cut at the same frequency. Your gain is set to the opposite of the hidden one, so you only need to find the frequency.</p>'},
+  {cfg: [0,3,0], title: 'Exercise 5: absolute identification', text: '<p>The hardest exercise. You can hear the <b>Question</b> and <b>Bypass</b>, but not your own EQ.</p><p>Move the dot to where you think the boost is, then check your answer.</p>'}
+];
+
+// Elo-style skill model: P(success) = logistic(skill - dS - dT - dP)
+const DIFF = {s:[0,0.5,0.9,1.3], t:[0,0.6,1.0,1.5], p:[0,0.35,0.6,0.95,1.2,1.55,1.85,2.25]};
+const SKILL0 = 1.1, K = 0.45, TARGET_P = 0.75, MIN_AT_CELL = 2;
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtHz = f => f >= 1000 ? (f / 1000) + ' kHz' : f + ' Hz';
+const fmtDb = g => (g > 0 ? '+' : g < 0 ? '−' : '') + Math.abs(g) + ' dB';
+const sig = x => 1 / (1 + Math.exp(-x));
+const safeSeg = s => String(s).replace(/[^A-Za-z0-9_.~:@+-]/g, '_').slice(0, 120) || 'x';
+const FMIN = 20, FMAX = 20000, PAD_L = 62, PAD_R = 24, DBR = 15, NF = 256;
+const xFrac = f => Math.log(f / FMIN) / Math.log(FMAX / FMIN);
+const freqs = new Float32Array(NF);
+for (let i = 0; i < NF; i++) freqs[i] = FMIN * Math.pow(FMAX / FMIN, i / (NF - 1));
+
+/* ================= storage: this browser only ================= */
+// Progress is kept in the participant's browser so they can come back on another day.
+// Participants download a results file and email it to RESEARCH_EMAIL (top of the script).
+const localKey = pid => 'eqtrainer:' + safeSeg(pid);
+const memStore = {};
+function readLocal(pid) { try { return JSON.parse(localStorage.getItem(localKey(pid)) || 'null'); } catch (e) { return memStore[pid] || null; } }
+function writeLocal(pid, st) { try { localStorage.setItem(localKey(pid), JSON.stringify(st)); } catch (e) { memStore[pid] = JSON.parse(JSON.stringify(st)); } }
+const blankState = () => ({updated: 0, background: {}, fam: null, pre: null, post: null,
+  adaptive: {sessions: 0, trials: 0, skill: SKILL0, cell: [0, 0, 0], atCell: 0},
+  structured: {sessions: 0, trials: 0, skill: SKILL0}});
+function localState(pid) { return Object.assign(blankState(), readLocal(pid) || {}); }
+function saveState(pid, st) { st.updated = Date.now(); writeLocal(pid, st); }
+
+/* ================= audio ================= */
+let ctx, src, tgt, usr, usr2, probe, qG, aG, fG, rG, master;
+const stimBufs = [null, null, null, null];
+let curStim = -1, mon = 'q', comps = {q: 1, a: 1, r: 1};
+
+async function ensureAudio() {
+  if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const mk = () => { const b = ctx.createBiquadFilter(); b.type = 'peaking'; b.gain.value = 0; return b; };
+  tgt = mk(); usr = mk(); usr2 = mk(); probe = mk();
+  [qG, aG, fG, rG] = [0, 0, 0, 0].map(() => { const g = ctx.createGain(); g.gain.value = 0; return g; });
+  master = ctx.createGain(); master.gain.value = +$('vol').value;
+  tgt.connect(qG); tgt.connect(usr2); usr2.connect(rG); usr.connect(aG);
+  [qG, aG, fG, rG].forEach(g => g.connect(master));
+  master.connect(ctx.destination);
+}
+function normalise(buf, rmsTarget) {
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c); let s = 0, pk = 0;
+    for (let i = 0; i < d.length; i++) { s += d[i] * d[i]; pk = Math.max(pk, Math.abs(d[i])); }
+    const k = Math.min(rmsTarget / (Math.sqrt(s / d.length) || 1), 0.9 / (pk || 1));
+    for (let i = 0; i < d.length; i++) d[i] *= k;
+  }
+  return buf;
+}
+function makePink() {
+  const sr = ctx.sampleRate, n = sr * 8, b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+    b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    d[i] = b0+b1+b2+b3+b4+b5+b6+w*0.5362; b6 = w*0.115926;
+  }
+  const f = Math.floor(sr * 0.01);
+  for (let i = 0; i < f; i++) { d[i] *= i / f; d[n - 1 - i] *= i / f; }
+  return normalise(b, 0.1);
+}
+// Synthesised music: 4 bars at 120 bpm (8 s), so the loop is seamless
+async function renderStim(level) {
+  const sr = ctx.sampleRate, oc = new OfflineAudioContext(1, sr * 8, sr);
+  const out = oc.createGain(); out.connect(oc.destination);
+  const nb = oc.createBuffer(1, sr, sr), nd = nb.getChannelData(0);
+  for (let i = 0; i < sr; i++) nd[i] = Math.random() * 2 - 1;
+  const env = (g, t, peak, dec, att = 0.002) => {
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec);
+  };
+  const noise = (t, dur, type, f, peak, dec) => {
+    const n = oc.createBufferSource(); n.buffer = nb;
+    const fl = oc.createBiquadFilter(); fl.type = type; fl.frequency.value = f;
+    const g = oc.createGain(); env(g, t, peak, dec);
+    n.connect(fl).connect(g).connect(out); n.start(t, Math.random() * 0.5); n.stop(t + dur);
+  };
+  const tone = (t, type, f0, f1, peak, dec) => {
+    const o = oc.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + 0.12);
+    const g = oc.createGain(); env(g, t, peak, dec); o.connect(g).connect(out); o.start(t); o.stop(t + dec + 0.05);
+  };
+  for (let bar = 0; bar < 4; bar++) for (let s = 0; s < 16; s++) {
+    const t = bar * 2 + s * 0.125;
+    if (s === 0 || s === 8 || s === 10 || (bar % 2 && s === 7)) { tone(t, 'sine', 150, 42, 1.0, 0.45); noise(t, 0.02, 'highpass', 3000, 0.12, 0.012); }
+    if (s === 4 || s === 12) { noise(t, 0.25, 'highpass', 1200, 0.55, 0.2); tone(t, 'triangle', 190, 160, 0.3, 0.12); }
+    if (s % 2 === 0) noise(t, 0.08, 'highpass', 7500, s === 14 && bar % 2 ? 0.25 : 0.18, s === 14 && bar % 2 ? 0.3 : 0.045);
+    if (s % 2 === 1 && level >= 3) noise(t, 0.05, 'highpass', 10000, 0.08, 0.03);
+  }
+  if (level >= 2) {
+    const roots = [55, 43.65, 65.41, 49], pat = [1,0,1,2,1,0,1.5,1];
+    roots.forEach((r, bar) => pat.forEach((m, k) => {
+      if (!m) return;
+      const t = bar * 2 + k * 0.25, o = oc.createOscillator(); o.type = 'sawtooth'; o.frequency.value = r * m;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 3;
+      fl.frequency.setValueAtTime(1400, t); fl.frequency.exponentialRampToValueAtTime(250, t + 0.2);
+      const g = oc.createGain(); env(g, t, 0.35, 0.22, 0.005);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 0.3);
+    }));
+  }
+  if (level >= 3) {
+    const chords = [[220,261.63,329.63],[174.61,220,261.63],[261.63,329.63,392],[196,246.94,293.66]];
+    chords.forEach((ch, bar) => ch.forEach(f => [-6, 6].forEach(c => {
+      const t = bar * 2, o = oc.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 2400;
+      const g = oc.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.035, t + 0.08);
+      g.gain.setValueAtTime(0.035, t + 1.85); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.99);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 2);
+    })));
+    const mel = [659.25,0,587.33,523.25, 440,0,523.25,587.33, 523.25,0,659.25,783.99, 659.25,587.33,0,0];
+    for (let rep = 0; rep < 2; rep++) mel.forEach((f, k) => {
+      if (!f) return;
+      const t = rep * 4 + k * 0.25, o = oc.createOscillator(); o.type = 'square'; o.frequency.value = f;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 4500;
+      const g = oc.createGain(); env(g, t, 0.06, 0.22, 0.01);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 0.3);
+    });
+  }
+  return normalise(await oc.startRendering(), 0.1);
+}
+async function prepareStimuli() {
+  if (!stimBufs[0]) stimBufs[0] = makePink();
+  for (let i = 1; i < 4; i++) if (!stimBufs[i]) stimBufs[i] = await renderStim(i);
+}
+function setStim(i) {
+  if (curStim === i && src) return;
+  stopStim();
+  src = ctx.createBufferSource(); src.buffer = stimBufs[i]; src.loop = true;
+  src.connect(tgt); src.connect(usr); src.connect(fG); src.start(); curStim = i;
+}
+function stopStim() { if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; } curStim = -1; }
+
+function resp(f, g, q) {
+  probe.frequency.value = f; probe.gain.value = g; probe.Q.value = q;
+  const m = new Float32Array(NF), p = new Float32Array(NF); probe.getFrequencyResponse(freqs, m, p); return m;
+}
+// level matching: equal power per octave (pink spectrum), so average |H|^2 over log frequency
+const compOf = m => { let s = 0; for (let i = 0; i < NF; i++) s += m[i] * m[i]; return 1 / Math.sqrt(s / NF); };
+function updateComps() {
+  const c = S.cur, mu = resp(FREQS[c.ufi], c.ug, QS[c.uqi]);
+  if (c.sandbox) { comps = {q: 1, a: compOf(mu), r: 1}; return; }
+  const mt = resp(FREQS[c.tfi], c.tg, TARGET_Q);
+  comps = {q: compOf(mt), a: compOf(mu), r: compOf(mt.map((v, i) => v * mu[i]))};
+}
+function applyMon() {
+  if (!ctx || !S || !S.cur) return;
+  const t = ctx.currentTime, flatTask = S.cur.task === 'flat', set = (g, v) => g.gain.setTargetAtTime(v, t, 0.008);
+  set(qG, mon === 'q' ? comps.q : 0); set(fG, mon === 'f' ? 1 : 0);
+  set(aG, mon === 'a' && !flatTask ? comps.a : 0); set(rG, mon === 'a' && flatTask ? comps.r : 0);
+}
+
+/* ================= session ================= */
+let S = null, P = null; // S: running session; P: participant {pid, state}
+
+const diffOf = c => DIFF.s[c[0]] + DIFF.t[c[1]] + DIFF.p[c[2]];
+const predict = c => sig(S.skill - diffOf(c));
+function cfgFor(i) {
+  if (S.stage === 'fam') return FAM[i].cfg ? FAM[i].cfg.slice() : [0, 0, 0];
+  if (S.stage === 'pre' || S.stage === 'post') return S.battery[i].slice();
+  if (S.stage === 'structured') return PATH[Math.min(PATH.length - 1, Math.floor(i / (S.total / PATH.length)))].slice();
+  return S.cell.slice();
+}
+// Adaptive: stay, or move one step on one axis, aiming at TARGET_P. Ties favour the axis furthest behind.
+function chooseNext(lastScore) {
+  const cur = S.cell, sizes = [4, 4, 8], cands = [{c: cur, axis: -1}];
+  for (let a = 0; a < 3; a++) for (const d of [-1, 1]) {
+    const v = cur[a] + d; if (v < 0 || v >= sizes[a]) continue;
+    const c = cur.slice(); c[a] = v; cands.push({c, axis: a, dir: d});
+  }
+  const mayMove = S.atCell >= MIN_AT_CELL || lastScore < 0.4;
+  let best = null;
+  for (const k of cands) {
+    if (k.axis >= 0 && !mayMove) continue;
+    let cost = Math.abs(predict(k.c) - TARGET_P);
+    if (k.axis >= 0 && k.dir > 0) cost += 0.04 * (cur[k.axis] / (sizes[k.axis] - 1));
+    if (!best || cost < best.cost) best = {...k, cost};
+  }
+  if (best.axis >= 0) { S.cell = best.c; S.atCell = 0; }
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ================= UI pieces ================= */
+function buildStatic() {
+  [['mS', 4], ['mT', 4], ['mP', 8]].forEach(([id, n]) => { const m = $(id); m.innerHTML = ''; for (let i = 0; i < n; i++) m.appendChild(document.createElement('span')); });
+  const conf = $('confSeg'); conf.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button'); b.textContent = i; b.dataset.c = i; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => setConf(i)); conf.appendChild(b);
+  }
+  $('freqSl').max = FREQS.length - 1; $('qSl').max = QS.length - 1;
+}
+function setMeters(c) {
+  [['mS', c[0]], ['mT', c[1]], ['mP', c[2]]].forEach(([id, v]) => [...$(id).children].forEach((s, k) => s.classList.toggle('on', k <= v)));
+  $('vS').textContent = STIMS[c[0]]; $('vT').textContent = TASKS[c[1]].name; $('vP').textContent = GAINS[c[2]].label;
+}
+function syncControls() {
+  const c = S.cur;
+  $('freqSl').value = c.ufi; $('fOut').textContent = fmtHz(FREQS[c.ufi]);
+  $('gainSl').max = c.gopts.length - 1; $('gainSl').value = c.gopts.indexOf(c.ug);
+  $('gOut').textContent = c.ug === 0 ? 'not set' : fmtDb(c.ug);
+  $('qSl').value = c.uqi; $('qOut').textContent = QS[c.uqi].toFixed(1);
+  const lock = c.submitted;
+  $('freqSl').disabled = lock; $('qSl').disabled = true; $('gainSl').disabled = lock || c.gopts.length < 2;
+  $('plot').classList.toggle('locked', lock);
+}
+
+/* ================= plot ================= */
+let curves = [];
+function setupCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return {g, w: r.width, h: r.height};
+}
+function plotGeom() {
+  const cv = $('plot'), r = cv.getBoundingClientRect();
+  const top = 10, bot = r.height - 40, pw = r.width - PAD_L - PAD_R;
+  return {r, top, bot, pw, X: f => PAD_L + xFrac(f) * pw, Y: db => top + (DBR - db) / (2 * DBR) * (bot - top)};
+}
+function drawPlot() {
+  const cv = $('plot'); if (!cv.offsetParent || !S || !S.cur) return;
+  const {g, w} = setupCanvas(cv), {top, bot, pw, X, Y} = plotGeom();
+  g.clearRect(0, 0, w, cv.height); g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.lineWidth = 1;
+  g.strokeStyle = css('--grid'); g.fillStyle = css('--muted'); g.textAlign = 'center'; g.textBaseline = 'top';
+  FREQS.forEach(f => { g.beginPath(); g.moveTo(X(f), top); g.lineTo(X(f), bot); g.stroke(); g.fillText(f >= 1000 ? f / 1000 + 'k' : f, X(f), bot + 5); });
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  [-12, -6, 0, 6, 12].forEach(db => {
+    g.strokeStyle = db === 0 ? css('--line') : css('--grid'); g.lineWidth = db === 0 ? 1.5 : 1;
+    g.beginPath(); g.moveTo(PAD_L, Y(db)); g.lineTo(w - PAD_R, Y(db)); g.stroke();
+    g.fillText((db > 0 ? '+' : db < 0 ? '−' : '') + Math.abs(db), PAD_L - 8, Y(db));
+  });
+  // axis titles
+  g.fillStyle = css('--ink'); g.font = '600 12px "Instrument Sans", system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillText('Frequency (Hz)', PAD_L + pw / 2, cv.getBoundingClientRect().height - 2);
+  g.save(); g.translate(14, (top + bot) / 2); g.rotate(-Math.PI / 2); g.textBaseline = 'middle'; g.fillText('Gain (dB)', 0, 0); g.restore();
+  g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.textAlign = 'right';
+  g.fillStyle = css('--ok'); g.textBaseline = 'top'; g.fillText('▲ Boost', w - PAD_R - 6, top + 4);
+  g.fillStyle = css('--bad'); g.textBaseline = 'bottom'; g.fillText('▼ Cut', w - PAD_R - 6, bot - 4);
+  curves.forEach(c => {
+    g.strokeStyle = css(c.color); g.lineWidth = c.width || 2.5; g.setLineDash(c.dash || []); g.beginPath();
+    for (let i = 0; i < NF; i++) {
+      const x = PAD_L + i / (NF - 1) * pw, y = Y(Math.max(-DBR, Math.min(DBR, 20 * Math.log10(c.mag[i]))));
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke(); g.setLineDash([]);
+  });
+  const c = S.cur, nx = X(FREQS[c.ufi]), ny = Y(c.ug);
+  g.fillStyle = css('--guess'); g.strokeStyle = css('--panel'); g.lineWidth = 2;
+  g.beginPath(); g.arc(nx, ny, 9, 0, Math.PI * 2); g.fill(); g.stroke();
+}
+function refreshCurves() {
+  const c = S.cur; curves = []; let leg = '';
+  if (c.submitted && S.stage !== 'pre' && S.stage !== 'post') {
+    curves.push({mag: resp(FREQS[c.tfi], c.tg, TARGET_Q), color: '--accent', width: 3});
+    leg += `<span><i style="background:var(--accent)"></i>Question: ${fmtHz(FREQS[c.tfi])}, ${fmtDb(c.tg)}</span>`;
+  }
+  curves.push({mag: resp(FREQS[c.ufi], c.ug, QS[c.uqi]), color: '--guess', width: 2.5, dash: c.submitted ? [6, 5] : []});
+  leg += `<span><i style="background:var(--guess)"></i>Your Response: ${fmtHz(FREQS[c.ufi])}, ${c.ug === 0 ? 'gain not set' : fmtDb(c.ug)}, Q 2</span>`;
+  $('legend').innerHTML = leg;
+  drawPlot();
+}
+// drag the band like a DAW EQ node; values snap to the exercise's steps
+let dragging = false;
+function pointerToEQ(e) {
+  const {r, top, bot, pw} = plotGeom(), c = S.cur;
+  const fx = (e.clientX - r.left - PAD_L) / pw, f = FMIN * Math.pow(FMAX / FMIN, Math.max(0, Math.min(1, fx)));
+  let fi = 0; FREQS.forEach((v, i) => { if (Math.abs(Math.log(v / f)) < Math.abs(Math.log(FREQS[fi] / f))) fi = i; });
+  const db = DBR - (e.clientY - r.top - top) / (bot - top) * 2 * DBR;
+  let gain = c.gopts[0]; c.gopts.forEach(v => { if (Math.abs(v - db) < Math.abs(gain - db)) gain = v; });
+  return {fi, gain};
+}
+$('plot').addEventListener('pointerdown', e => {
+  if (!S || !S.cur || S.cur.submitted) return;
+  dragging = true; $('plot').setPointerCapture(e.pointerId); userAdjust(pointerToEQ(e));
+});
+$('plot').addEventListener('pointermove', e => { if (dragging && S.cur && !S.cur.submitted) userAdjust(pointerToEQ(e)); });
+['pointerup', 'pointercancel'].forEach(t => $('plot').addEventListener(t, () => { dragging = false; }));
+// Q is fixed at 2 (as in Corey’s trainer), so scrolling over the curve does nothing
+
+/* ================= trials ================= */
+function allowedMons(c) {
+  if (c.sandbox) return ['a', 'f'];
+  if (c.submitted && S.stage !== 'pre' && S.stage !== 'post') return ['q', 'a', 'f'];
+  switch (c.task) {
+    case 'match': return ['q', 'a', 'f'];
+    case 'memory': return c.locked ? ['a', 'f'] : ['q', 'a', 'f'];
+    case 'flat': return ['q', 'a', 'f'];      // Corey: Your Response can be compared with Bypass
+    default: return ['q', 'f'];               // absolute identification: only Question and Bypass (Corey, p. 44)
+  }
+}
+function canHearHtml(c) {
+  const ok = allowedMons(c), names = {f: 'Bypass', q: 'Question', a: 'Your Response'};
+  return '<div class="callout"><b>You can hear:</b><div class="canhear">' + ['f', 'q', 'a'].map(m => `<span class="${ok.includes(m) ? 'y' : 'n'}">${names[m]}</span>`).join('') + '</div></div>';
+}
+function monReason(c, m) {
+  if (c.sandbox) return 'There is no Question in free play';
+  if (m === 'q' && c.task === 'memory') return 'The Question is hidden once you move a control';
+  if (m === 'a' && c.task === 'absolute') return 'In absolute identification you can’t hear your own EQ';
+  return 'Not available in this exercise';
+}
+function renderMonitors() {
+  const c = S.cur, ok = allowedMons(c);
+  ['mQ', 'mA', 'mF'].forEach(id => {
+    const b = $(id), m = b.dataset.m;
+    b.disabled = !ok.includes(m); b.setAttribute('aria-pressed', String(mon === m));
+    b.title = b.disabled ? monReason(c, m) : '';
+  });
+}
+function setMon(m, user = true) {
+  const c = S.cur; if (!allowedMons(c).includes(m)) return;
+  if (user) S.lastMon = m;
+  if (m === mon) return;
+  const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
+  if (user && !c.submitted) c.switches++;
+  mon = m; applyMon(); renderMonitors();
+}
+function setConf(i) {
+  const c = S.cur; if (c.submitted || c.sandbox) return;
+  c.conf = i; [...$('confSeg').children].forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.c === i))); updateGo();
+}
+function updateGo() {
+  const c = S.cur, b = $('goBtn');
+  if (c.sandbox) { b.disabled = false; b.textContent = 'Continue'; return; }
+  if (c.submitted) { b.disabled = false; b.textContent = S.idx + 1 >= S.total ? 'See results' : 'Next question'; return; }
+  const test = S.stage === 'pre' || S.stage === 'post';
+  b.textContent = test ? (S.idx + 1 >= S.total ? 'Finish test' : 'Next question') : 'Check Answer';
+  b.disabled = c.ug === 0 || c.conf == null;
+}
+
+function startTrial() {
+  const i = S.idx, fam = S.stage === 'fam' ? FAM[i] : null;
+  if (fam && fam.sandbox) {
+    S.cur = {sandbox: true, task: 'sandbox', cfg: [0, 0, 0], ufi: 4, ug: 6, uqi: TARGET_QI, gopts: [-12,-9,-6,-3,0,3,6,9,12],
+      submitted: false, monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), switches: 0, path: [], adjustments: 0, t0: performance.now()};
+    [usr, usr2].forEach(f => { f.frequency.value = 1000; f.gain.value = 6; f.Q.value = TARGET_Q; });
+    setStim(0); updateComps(); mon = 'a'; applyMon();
+  } else {
+    const cfg = cfgFor(i), task = TASKS[cfg[1]].id, gset = GAINS[cfg[2]].vals;
+    let tfi; do { tfi = Math.floor(Math.random() * FREQS.length); } while (tfi === S.lastTfi);
+    S.lastTfi = tfi;
+    const tg = gset[Math.floor(Math.random() * gset.length)];
+    const answerVals = task === 'flat' ? gset.map(v => -v) : gset.slice();
+    const gopts = answerVals.length === 1 ? answerVals : [...new Set([0, ...answerVals])].sort((a, b) => a - b);
+    S.cur = {cfg, task, tfi, tg, gopts, ufi: 4, ug: answerVals.length === 1 ? answerVals[0] : 0, uqi: TARGET_QI, conf: null,
+      t0: performance.now(), firstAdj: null, adjustments: 0, path: [], switches: 0,
+      monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), locked: false, submitted: false,
+      pred: predict(cfg), skillBefore: S.skill};
+    const c = S.cur;
+    tgt.frequency.value = FREQS[tfi]; tgt.gain.value = tg; tgt.Q.value = TARGET_Q;
+    [usr, usr2].forEach(f => { f.frequency.value = FREQS[c.ufi]; f.gain.value = c.ug; f.Q.value = QS[c.uqi]; });
+    setStim(cfg[0]); updateComps(); mon = allowedMons(S.cur).includes(S.lastMon) ? S.lastMon : 'q'; applyMon();
+  }
+  const c = S.cur;
+  $('trialTxt').textContent = `Trial ${i + 1} of ${S.total}`;
+  $('axes').classList.toggle('hidden', !!c.sandbox);
+  if (!c.sandbox) setMeters(c.cfg);
+  $('intro').innerHTML = `<b>${fam ? fam.title : TASKS[c.cfg[1]].name}:</b> ${INSTR[c.task]}`;
+  if (fam && fam.sandbox) showPages(EQ_INTRO, 'Start exploring', 0, 'I know EQ: skip this');
+  else if (fam) openModal({kicker: 'Familiarisation', title: fam.title, html: fam.text + canHearHtml(S.cur), buttons: [{label: 'Start', primary: true}]});
+  $('confRow').classList.toggle('hidden', !!c.sandbox);
+  [...$('confSeg').children].forEach(b => { b.setAttribute('aria-pressed', 'false'); b.disabled = false; });
+  $('msg').textContent = ''; $('msg').className = 'msg';
+  syncControls(); renderMonitors(); refreshCurves(); updateGo();
+}
+
+function userAdjust({fi, gain, qi}) {
+  const c = S.cur; if (c.submitted) return;
+  const nf = fi ?? c.ufi, ng = gain ?? c.ug, nq = TARGET_QI; // Q is locked at 2
+  if (nf === c.ufi && ng === c.ug && nq === c.uqi) return;
+  c.ufi = nf; c.ug = ng; c.uqi = nq;
+  const t = Math.round(performance.now() - c.t0);
+  c.adjustments++; if (c.firstAdj == null) c.firstAdj = t;
+  if (c.path.length < 300) c.path.push(`${t}:${FREQS[nf]}:${ng}:${QS[nq]}`);
+  const now = ctx.currentTime;
+  [usr, usr2].forEach(f => { f.frequency.setTargetAtTime(FREQS[nf], now, 0.01); f.gain.setTargetAtTime(ng, now, 0.01); f.Q.setTargetAtTime(QS[nq], now, 0.01); });
+  if (c.task === 'memory' && !c.locked) {
+    c.locked = true; if (mon === 'q') setMon('a', false);
+    $('msg').textContent = 'Question hidden: match it from memory.'; $('msg').className = 'msg';
+  }
+  updateComps(); applyMon(); renderMonitors(); syncControls(); refreshCurves(); updateGo();
+}
+
+function submit() {
+  const c = S.cur; if (c.submitted || c.ug === 0 || c.conf == null) return;
+  const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
+  c.submitted = true; c.total = Math.round(now - c.t0);
+  const correctGain = c.task === 'flat' ? -c.tg : c.tg;
+  const octErr = c.ufi - c.tfi, gainErr = c.ug - correctGain;
+  const fScore = Math.max(0, 1 - Math.abs(octErr));
+  const gScore = Math.sign(c.ug) !== Math.sign(correctGain) ? 0 : Math.max(0, 1 - Math.abs(gainErr) / 12);
+  const score = Math.round((0.75 * fScore + 0.25 * gScore) * 1000) / 1000, exact = octErr === 0 && gainErr === 0;
+  S.skill += K * (score - c.pred);
+  S.rows.push({
+    participant_id: P.pid, stage: S.stage, session_number: S.sessionNo, session_id: S.sid, training_group: S.group, session_minutes: S.sessionMinutes, session_trials: S.total,
+    experience: P.state.background.exp || '', headphones: P.state.background.phones || '',
+    trial: S.idx + 1, stimulus: STIMS[c.cfg[0]], stimulus_level: c.cfg[0] + 1, task: TASKS[c.cfg[1]].name, task_level: c.cfg[1] + 1,
+    gain_set: GAINS[c.cfg[2]].label, gain_level: c.cfg[2] + 1, target_hz: FREQS[c.tfi], target_gain_db: c.tg, target_q: TARGET_Q,
+    correct_gain_db: correctGain, response_hz: FREQS[c.ufi], response_gain_db: c.ug, response_q: QS[c.uqi],
+    freq_error_oct: octErr, gain_error_db: gainErr, q_error_oct: +Math.log2(QS[c.uqi] / TARGET_Q).toFixed(3),
+    score, exact: exact ? 1 : 0, confidence: c.conf,
+    predicted_p: +c.pred.toFixed(3), skill_before: +c.skillBefore.toFixed(3), skill_after: +S.skill.toFixed(3),
+    first_adjust_ms: c.firstAdj ?? '', total_ms: c.total, adjustments: c.adjustments, monitor_switches: c.switches,
+    ms_question: Math.round(c.monTime.q), ms_answer: Math.round(c.monTime.a), ms_flat: Math.round(c.monTime.f),
+    adjust_path: c.path.join(';'), timestamp: new Date().toISOString()
+  });
+  if (S.stage === 'adaptive') { S.atCell++; chooseNext(score); }
+  if (S.rows.length % 5 === 0) saveState(P.pid, P.state);
+  [...$('confSeg').children].forEach(b => b.disabled = true);
+  $('msg').textContent = '';
+  if (S.stage === 'pre' || S.stage === 'post') {
+    // no feedback in the tests: go straight on
+    syncControls(); renderMonitors(); updateGo(); go(); return;
+  }
+  showFeedback(c, {correctGain, octErr, gainErr, score, exact});
+  syncControls(); renderMonitors(); refreshCurves(); updateGo(); $('goBtn').focus();
+}
+/* ---------- pop-ups ---------- */
+let modalOpen = false;
+function openModal({kicker = '', title, titleClass = '', tone = '', html, buttons}) {
+  document.querySelector('.modal-card').className = 'modal-card ' + tone;
+  $('modalKicker').textContent = kicker;
+  $('modalTitle').textContent = title; $('modalTitle').className = titleClass;
+  $('modalBody').innerHTML = html;
+  const box = $('modalBtns'); box.innerHTML = '';
+  let primary = null;
+  buttons.forEach(bt => {
+    const b = document.createElement('button'); b.textContent = bt.label; if (bt.primary) { b.className = 'primary'; primary = b; }
+    b.addEventListener('click', () => { if (!bt.keepOpen) closeModal(); if (bt.onClick) bt.onClick(); });
+    box.appendChild(b);
+  });
+  $('modal').classList.remove('hidden'); modalOpen = true; holdAudio(true);
+  (primary || box.lastChild).focus();
+}
+function closeModal() { $('modal').classList.add('hidden'); modalOpen = false; holdAudio(false); }
+// the stimulus is silent while a pop-up is open, so players can read without noise
+function holdAudio(on) {
+  if (!master) return;
+  const t = ctx.currentTime; master.gain.cancelScheduledValues(t);
+  if (on) master.gain.setValueAtTime(0, t); else master.gain.setTargetAtTime(+$('vol').value, t, 0.05);
+}
+function showPages(pages, lastLabel, i = 0, skipLabel = '') {
+  const pg = pages[i], last = i === pages.length - 1;
+  openModal({kicker: `${i + 1} of ${pages.length}`, title: pg.title, html: pg.html, buttons: [
+    ...(skipLabel && !last ? [{label: skipLabel}] : []),
+    ...(i > 0 ? [{label: 'Back', onClick: () => showPages(pages, lastLabel, i - 1, skipLabel)}] : []),
+    {label: last ? lastLabel : 'Next', primary: true, onClick: last ? null : () => showPages(pages, lastLabel, i + 1, skipLabel)}
+  ]});
+}
+function showFeedback(c, {correctGain, octErr, gainErr, score, exact}) {
+  const fOk = octErr === 0, gOk = gainErr === 0, flat = c.task === 'flat';
+  const notes = [];
+  if (!fOk) notes.push(`Your frequency was ${Math.abs(octErr)} octave${Math.abs(octErr) === 1 ? '' : 's'} too ${octErr > 0 ? 'high' : 'low'}.`);
+  if (!gOk) notes.push(Math.sign(c.ug) !== Math.sign(correctGain) ? `You chose a ${c.ug > 0 ? 'boost' : 'cut'}, but it needed a ${correctGain > 0 ? 'boost' : 'cut'}.` : 'The gain was a different size.');
+  if (flat) notes.push(`To cancel a ${fmtDb(c.tg)} ${c.tg > 0 ? 'boost' : 'cut'}, you need ${fmtDb(correctGain)} at the same frequency.`);
+  const html = `<table class="fbt"><tr><th></th><th>${flat ? 'Correct answer' : 'Question'}</th><th>Your Response</th></tr>
+    <tr><th>Frequency</th><td>${fmtHz(FREQS[c.tfi])}</td><td class="${fOk ? 'good' : 'wrong'}">${fmtHz(FREQS[c.ufi])} ${fOk ? '✓' : '✗'}</td></tr>
+    <tr><th>Gain</th><td>${fmtDb(correctGain)}</td><td class="${gOk ? 'good' : 'wrong'}">${fmtDb(c.ug)} ${gOk ? '✓' : '✗'}</td></tr></table>
+    <p><span class="scoreline">Score: ${Math.round(score * 100)}%</span></p>${notes.map(n => `<p>${n}</p>`).join('')}
+    <p class="hint">Choose Listen again to compare the Question, Your Response and Bypass before moving on.</p>`;
+  openModal({kicker: TASKS[c.cfg[1]].name, title: exact ? 'Correct!' : 'Not quite', titleClass: exact ? 'ok' : 'bad', tone: exact ? 'ok' : 'bad', html, buttons: [
+    {label: 'Listen again'},
+    {label: S.idx + 1 >= S.total ? 'See results' : 'Next question', primary: true, onClick: go}
+  ]});
+}
+function go() {
+  if (modalOpen) closeModal();
+  if (S.cur.sandbox || S.cur.submitted) { S.idx++; return S.idx >= S.total ? finish(true) : startTrial(); }
+  submit();
+}
+
+/* ================= home ================= */
+const sessionMinutes = () => SESSION_MINUTES || +($('lenSel') ? $('lenSel').value : 25);
+const sessionTrials = () => (LENGTHS.find(l => l.min === sessionMinutes()) || LENGTHS[1]).trials;
+const STAGE_NAME = {fam: 'Familiarisation', pre: 'Pre-test', adaptive: 'Adaptive training', structured: 'Structured training', post: 'Post-test'};
+function trainingShown() {
+  const h = TRAINING_GROUP || location.hash.replace('#', '');
+  return h === 'adaptive' || h === 'structured' ? [h] : ['adaptive', 'structured'];
+}
+function renderSteps() {
+  const st = P ? P.state : blankState(), shown = trainingShown(), ready = !!P;
+  const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {day: 'numeric', month: 'short'}) : '';
+  const items = [
+    {key: 'fam', title: 'Familiarisation', desc: 'Learn the EQ controls and try each exercise once. About 5 minutes.', done: !!st.fam, status: st.fam ? 'Done ' + fmtDate(st.fam.date) : 'Not started'},
+    {key: 'pre', title: 'Pre-test', desc: '16 matching exercises with no feedback, to measure where you start. About 7 minutes.', done: !!st.pre, status: st.pre ? 'Done ' + fmtDate(st.pre.date) : 'Not started'},
+    ...shown.map(g => ({key: g, title: STAGE_NAME[g], desc: 'Training sessions with feedback. Do as many sessions as your researcher asks, on separate days.',
+      done: st[g].sessions >= 1, status: `${st[g].sessions} session${st[g].sessions === 1 ? '' : 's'} done`, full: false, train: true})),
+    {key: 'post', title: 'Post-test', desc: 'The same 16 exercises as the pre-test, to measure your improvement. About 7 minutes.', done: !!st.post, status: st.post ? 'Done ' + fmtDate(st.post.date) : 'Not started'}
+  ];
+  // the training step is done when either training is complete; with both shown, both get the Next badge until one is started
+  const trainDone = shown.some(g => st[g].sessions >= 1);
+  const order = ['fam', 'pre', 'train', 'post'], isDone = k => k === 'train' ? trainDone : !!st[k];
+  const nk = ready ? order.find(k => !isDone(k)) : null;
+  const started = shown.filter(g => st[g].sessions > 0 || st[g].trials > 0);
+  const nextKeys = new Set(nk === 'train' ? (started.length ? started : shown) : nk ? [nk] : []);
+  $('steps').innerHTML = items.map((x, k) => `
+    <div class="step ${x.done ? 'done' : ''} ${nextKeys.has(x.key) ? 'next' : ''}">
+      <span class="num">${x.done ? '✓' : k + 1}</span>
+      <div><h3>${x.title}${nextKeys.has(x.key) ? '<span class="badge">Next</span>' : ''}</h3><p>${x.desc}</p><span class="status">${ready ? x.status : ''}</span></div>
+      <button data-stage="${x.key}" ${x.full || (x.done && (x.key === 'pre' || x.key === 'post')) ? 'disabled' : ''} class="${nextKeys.has(x.key) ? 'primary' : ''}">${x.done && x.key === 'fam' ? 'Repeat' : x.train && x.done ? 'Start another session' : 'Start'}</button>
+    </div>`).join('');
+  $('steps').querySelectorAll('button[data-stage]').forEach(b => b.addEventListener('click', () => startStage(b.dataset.stage)));
+  $('progressHint').textContent = ready ? (shown.length === 2 ? 'Do the steps in order. Your researcher will tell you which training to do.' : 'Do the steps in order.') : 'Enter your participant ID at the top of the page to see your progress.';
+}
+let pidTimer = null;
+async function loadParticipant() {
+  const pid = $('pid').value.trim();
+  if (!pid) { P = null; renderSteps(); return; }
+  try { localStorage.setItem('eqtrainer:lastPid', pid); } catch (e) {}
+  P = {pid, state: localState(pid)};
+  fillBackground(); renderSteps();
+}
+function fillBackground() {
+  if (P.state.sessionMinutes && !SESSION_MINUTES) $('lenSel').value = String(P.state.sessionMinutes);
+  const b = P.state.background || {};
+  if (b.exp) $('exp').value = b.exp;
+  if (b.phones) $('phones').value = b.phones;
+}
+['input', 'change'].forEach(t => $('pid').addEventListener(t, () => { clearTimeout(pidTimer); pidTimer = setTimeout(loadParticipant, 300); }));
+
+function show(id) { ['home', 'trial', 'summary'].forEach(s => $(s).classList.toggle('hidden', s !== id)); document.body.classList.toggle('intrial', id === 'trial'); if (id !== 'trial' && modalOpen) closeModal(); window.scrollTo(0, 0); }
+
+async function startStage(stage) {
+  const err = $('homeErr'); err.classList.add('hidden');
+  const fail = m => { err.textContent = m; err.classList.remove('hidden'); err.scrollIntoView({block: 'center', behavior: 'smooth'}); };
+  const typed = $('pid').value.trim();
+  if (!typed) { $('pid').focus(); return fail('Enter your participant ID at the top of the page, then press Start again.'); }
+  if (!P || P.pid !== typed) { P = {pid: typed, state: localState(typed)}; }
+  if (!$('exp').value) { $('exp').focus(); return fail('Choose your audio production experience near the top of the page, then press Start again.'); }
+  P.state.background = {exp: $('exp').value, phones: $('phones').value.trim()};
+  P.state.sessionMinutes = sessionMinutes();
+  const btns = $('steps').querySelectorAll('button'); btns.forEach(b => b.disabled = true);
+  try { await ensureAudio(); await prepareStimuli(); }
+  catch (e) { renderSteps(); return fail('Audio couldn’t start in this browser. Try Chrome, Edge, Firefox or Safari.'); }
+  stopTest();
+  const st = P.state, isTrain = stage === 'adaptive' || stage === 'structured';
+  S = {
+    stage, group: isTrain ? stage : '', sid: `${safeSeg(P.pid)}_${stage}_${Date.now()}`, started: new Date().toISOString(),
+    sessionNo: isTrain ? st[stage].sessions + 1 : 1,
+    total: stage === 'fam' ? FAM.length : stage === 'pre' || stage === 'post' ? TEST_TRIALS : sessionTrials(),
+    sessionMinutes: isTrain ? sessionMinutes() : '',
+    idx: 0, rows: [], lastTfi: -1,
+    skill: isTrain ? st[stage].skill : SKILL0,
+    cell: stage === 'adaptive' ? st.adaptive.cell.slice() : [0, 0, 0], atCell: stage === 'adaptive' ? st.adaptive.atCell : 0,
+    battery: shuffle([0, 1, 2, 3].flatMap(s => [[s, 0, 5], [s, 0, 5], [s, 0, 5], [s, 0, 5]])).sort((a, b) => a[0] - b[0])
+  };
+  saveState(P.pid, st);
+  $('stageTxt').textContent = STAGE_NAME[stage];
+  $('sessionTxt').textContent = isTrain ? `Session ${S.sessionNo}, ${S.sessionMinutes} minutes` : '';
+  $('pauseBtn').textContent = 'Pause';
+  show('trial'); startTrial();
+}
+
+async function finish(complete) {
+  stopStim();
+  const st = P.state, n = S.rows.length, date = new Date().toISOString();
+  if (S.stage === 'fam' && complete) st.fam = {date};
+  if ((S.stage === 'pre' || S.stage === 'post') && complete) st[S.stage] = {date, session_id: S.sid};
+  if (S.stage === 'adaptive') Object.assign(st.adaptive, {skill: S.skill, cell: S.cell, atCell: S.atCell, trials: st.adaptive.trials + n, sessions: st.adaptive.sessions + (complete ? 1 : 0)});
+  if (S.stage === 'structured') Object.assign(st.structured, {skill: S.skill, trials: st.structured.trials + n, sessions: st.structured.sessions + (complete ? 1 : 0)});
+  show('summary');
+  $('sumTitle').textContent = complete ? `${STAGE_NAME[S.stage]} complete` : `${STAGE_NAME[S.stage]} ended early`;
+  S.complete = complete;
+  saveState(P.pid, st);
+  renderReport();
+  buildEmail();
+  renderSteps();
+}
+
+function renderReport() {
+  const rows = S.rows, n = rows.length, mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0, pct = x => Math.round(x * 100) + '%';
+  const stats = n ? [[pct(mean(rows.map(r => r.score))), 'average score'], [`${rows.filter(r => r.exact).length} of ${n}`, 'exact answers'],
+    [(mean(rows.map(r => r.total_ms)) / 1000).toFixed(1) + ' s', 'average time per answer']] : [['0', 'exercises answered']];
+  $('stats').innerHTML = stats.map(([v, k]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+  const groups = TASKS.map(t => rows.filter(r => r.task === t.name)).filter(a => a.length);
+  $('byTask').innerHTML = n ? '<tr><th>Exercise</th><th>Answers</th><th>Average score</th><th>Exact</th></tr>' + groups.map(a =>
+    `<tr><td>${a[0].task}</td><td>${a.length}</td><td>${pct(mean(a.map(r => r.score)))}</td><td>${pct(mean(a.map(r => r.exact)))}</td></tr>`).join('') : '';
+  $('lanesBlock').classList.toggle('hidden', !(n && (S.stage === 'adaptive' || S.stage === 'structured')));
+  $('dlMsg').textContent = '';
+  drawLanes();
+}
+function drawLanes() {
+  const cv = $('lanes'); if (!S || !cv.offsetParent || !S.rows.length) return;
+  const rows = S.rows, {g, w, h} = setupCanvas(cv), L = 120, R = 10, B = 34, n = rows.length;
+  const lanes = [['Stimulus type', 'stimulus_level', 4, '1–4'], ['Task', 'task_level', 4, '1–4'], ['Size of change', 'gain_level', 8, '1–8'], ['Score', 'score', 1, '0–1']];
+  const lh = (h - B - 4) / lanes.length, X = i => L + (n === 1 ? (w - L - R) / 2 : i / (n - 1) * (w - L - R));
+  g.clearRect(0, 0, w, h); g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.textBaseline = 'middle';
+  lanes.forEach(([label, key, max, range], li) => {
+    const top = li * lh + 6, bot = top + lh - 10, Y = v => key === 'score' ? bot - v * (bot - top) : bot - (v - 1) / (max - 1) * (bot - top);
+    g.strokeStyle = css('--grid'); g.lineWidth = 1; g.strokeRect(L, top, w - L - R, bot - top);
+    g.fillStyle = css('--ink'); g.textAlign = 'left'; g.font = '600 12px "Instrument Sans", system-ui, sans-serif'; g.fillText(label, 0, (top + bot) / 2 - 7);
+    g.fillStyle = css('--muted'); g.font = '11px "Instrument Sans", system-ui, sans-serif'; g.fillText(`level ${range}, harder ↑`.replace('level 0–1, harder ↑', '0–1, better ↑'), 0, (top + bot) / 2 + 8);
+    g.font = '12px "Instrument Sans", system-ui, sans-serif';
+    if (key === 'score') rows.forEach((r, i) => { g.fillStyle = css(r.exact ? '--ok' : r.score >= 0.5 ? '--guess' : '--bad'); g.beginPath(); g.arc(X(i), Y(r.score), 3, 0, 7); g.fill(); });
+    else {
+      g.strokeStyle = css('--accent'); g.lineWidth = 2; g.beginPath();
+      rows.forEach((r, i) => { const y = Y(r[key]); if (!i) g.moveTo(X(i), y); else { g.lineTo(X(i), Y(rows[i - 1][key])); g.lineTo(X(i), y); } });
+      g.stroke();
+    }
+  });
+  // x axis: trial number
+  g.fillStyle = css('--muted'); g.textAlign = 'center'; g.textBaseline = 'top';
+  [...new Set([1, Math.ceil(n / 2), n])].forEach(t => g.fillText(t, X(t - 1), h - B + 2));
+  g.fillStyle = css('--ink'); g.font = '600 12px "Instrument Sans", system-ui, sans-serif'; g.textBaseline = 'bottom';
+  g.fillText('Trial number', L + (w - L - R) / 2, h - 1);
+}
+function toCSV(rows) {
+  if (!rows.length) return '';
+  const cols = Object.keys(rows[0]), esc = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n') + '\n';
+}
+const fileName = () => `eqtraining_${safeSeg(P.pid)}_${S.stage}${S.group ? '_s' + S.sessionNo : ''}_${new Date().toISOString().slice(0, 10)}.csv`;
+function buildEmail() {
+  $('emailTo').textContent = RESEARCH_EMAIL;
+  $('fileName').textContent = fileName();
+  $('csv').value = toCSV(S.rows);
+}
+function download() {
+  const data = toCSV(S.rows), m = $('dlMsg'); if (!data) { m.textContent = 'There’s no data to save.'; return; }
+  const name = fileName();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type: 'text/csv'})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); m.textContent = 'Saved. Now attach it to an email to ' + RESEARCH_EMAIL + '.';
+}
+
+/* ================= wiring ================= */
+let testing = false;
+function stopTest() { if (testing) { stopStim(); testing = false; $('testBtn').textContent = 'Play test sound'; } }
+$('testBtn').addEventListener('click', async () => {
+  if (testing) return stopTest();
+  $('testBtn').disabled = true; $('testBtn').textContent = 'Preparing…';
+  try { await ensureAudio(); if (!stimBufs[3]) stimBufs[3] = await renderStim(3); }
+  catch (e) { $('testBtn').disabled = false; $('testBtn').textContent = 'Play test sound'; return; }
+  $('testBtn').disabled = false;
+  qG.gain.value = 0; aG.gain.value = 0; rG.gain.value = 0; fG.gain.value = 1;
+  setStim(3); testing = true; $('testBtn').textContent = 'Stop test sound';
+});
+function setVol(v) { $('vol').value = v; $('vol2').value = v; if (master && !modalOpen) master.gain.setTargetAtTime(+v, ctx.currentTime, 0.02); }
+$('vol').addEventListener('input', e => setVol(e.target.value));
+$('vol2').addEventListener('input', e => setVol(e.target.value));
+['mQ', 'mA', 'mF'].forEach(id => $(id).addEventListener('click', () => setMon($(id).dataset.m)));
+$('freqSl').addEventListener('input', e => userAdjust({fi: +e.target.value}));
+$('gainSl').addEventListener('input', e => userAdjust({gain: S.cur.gopts[+e.target.value]}));
+$('goBtn').addEventListener('click', go);
+$('helpBtn').addEventListener('click', () => openModal({title: 'How to play', html: HELP_HTML, buttons: [{label: 'Got it', primary: true}]}));
+$('pauseBtn').addEventListener('click', async () => {
+  if (ctx.state === 'running') { await ctx.suspend(); $('pauseBtn').textContent = 'Resume'; }
+  else { await ctx.resume(); $('pauseBtn').textContent = 'Pause'; }
+});
+$('endBtn').addEventListener('click', async () => { if (ctx.state === 'suspended') await ctx.resume(); finish(false); });
+$('homeBtn').addEventListener('click', () => { show('home'); renderSteps(); });
+$('dlBtn').addEventListener('click', download);
+$('copyBtn').addEventListener('click', async () => {
+  const t = $('csv');
+  try { await navigator.clipboard.writeText(t.value); $('dlMsg').textContent = 'Copied.'; }
+  catch (e) { t.focus(); t.select(); $('dlMsg').textContent = 'Text selected. Press Ctrl+C or Cmd+C to copy.'; }
+});
+document.addEventListener('keydown', e => {
+  if (modalOpen) {
+    if (e.key === 'Enter') { e.preventDefault(); const p = $('modalBtns').querySelector('.primary'); if (p) p.click(); }
+    return;
+  }
+  if ($('trial').classList.contains('hidden') || !S || !S.cur) return;
+  if (e.target.matches('input[type=text],textarea,select')) return;
+  if (e.target.matches('input[type=range]') && e.key.startsWith('Arrow')) return;
+  const k = e.key.toLowerCase(), c = S.cur;
+  // keyboard shortcuts follow Corey (2016, p. 48)
+  if (k === 'q') setMon('f'); else if (k === 'w') setMon('q'); else if (k === 'e') setMon('a');
+  else if (k === ' ') {
+    e.preventDefault();
+    const pair = c.sandbox ? ['a', 'f'] : c.submitted ? ['q', 'a'] : {match: ['q', 'a'], memory: c.locked ? ['f', 'a'] : ['q', 'a'], flat: ['a', 'f'], absolute: ['q', 'f']}[c.task];
+    setMon(mon === pair[0] ? pair[1] : pair[0]);
+  }
+  else if (/^[1-9]$/.test(k) && !c.submitted) userAdjust({fi: +k - 1});
+  else if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k) && !c.submitted) {
+    e.preventDefault();
+    if (k === 'arrowup' || k === 'arrowdown') userAdjust({fi: Math.max(0, Math.min(FREQS.length - 1, c.ufi + (k === 'arrowup' ? 1 : -1)))});
+    else { const gi = Math.max(0, Math.min(c.gopts.length - 1, c.gopts.indexOf(c.ug) + (k === 'arrowright' ? 1 : -1))); userAdjust({gain: c.gopts[gi]}); }
+  } else if (e.key === 'Enter' && !$('goBtn').disabled && e.target.tagName !== 'BUTTON') { e.preventDefault(); go(); }
+});
+window.addEventListener('hashchange', renderSteps);
+const redraw = () => { drawPlot(); drawLanes(); };
+new ResizeObserver(redraw).observe(document.body);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+new MutationObserver(redraw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+
+buildStatic();
+if (SESSION_MINUTES) $('lenRow').classList.add('hidden');
+try { const last = localStorage.getItem('eqtrainer:lastPid'); if (last) $('pid').value = last; } catch (e) {}
+renderSteps();
+if ($('pid').value.trim()) loadParticipant();
+})();
+</script>
+</body>
+</html>
