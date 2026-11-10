@@ -12,6 +12,11 @@
   let analyser = null;
   let animationFrame = null;
 
+  // create an array of HSL colours  with increasing angles:
+  const colors = Array.from({ length: 251 }, (_, i) =>
+  `hsl(${i}, 100%, 50%)`
+  );
+
   function resize() {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -20,6 +25,11 @@
     canvas.height = Math.round(rect.height * dpr);
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+
+/*  // Linear interpolation function; could be used for creating gradient with HSL:
+  function lerp(index, rangeIn, rangeOut) {
+    return (index - rangeIn[0]) * (rangeOut[1] - rangeOut[0]) / (rangeIn[1] - rangeIn[0] + rangeOut[0]);
+  }*/
 
   function draw() {
     const rect = canvas.getBoundingClientRect();
@@ -41,9 +51,26 @@
       const logRange = Math.log(FMAX / FMIN);
 
       const gradient = context.createLinearGradient(PAD_L, 0, width - PAD_R, 0);
-      gradient.addColorStop(0, 'rgba(43, 71, 201, 0.55)');
-      gradient.addColorStop(0.5, 'rgba(36, 128, 79, 0.42)');
-      gradient.addColorStop(1, 'rgba(184, 121, 8, 0.48)');
+      //Two approaches:
+      
+/*    // Gradient from hard-coded colours:
+      gradient.addColorStop(0,  'crimson');
+      gradient.addColorStop(0.1,'red');
+      gradient.addColorStop(0.2,'orange');
+      gradient.addColorStop(0.3,'gold');
+      gradient.addColorStop(0.4,'yellow');
+      gradient.addColorStop(0.5,'greenYellow');
+      gradient.addColorStop(0.6,'springGreen');
+      gradient.addColorStop(0.7,'turquoise');
+      gradient.addColorStop(0.8,'deepSkyBlue');
+      gradient.addColorStop(0.9,'dodgerBlue');
+      gradient.addColorStop(1,  'midnightBlue');*/
+
+      // Gradient from an array of HSL colours:
+      for (let i = 0; i < colors.length; i++) {
+        const position = i / (colors.length - 1);
+        gradient.addColorStop(position, colors[i]);
+      }
 
       context.fillStyle = gradient;
       context.beginPath();
