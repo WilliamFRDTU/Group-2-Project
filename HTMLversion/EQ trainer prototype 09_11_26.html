@@ -68,7 +68,7 @@ details .inner{margin-top:14px;display:grid;gap:14px}
 .files{display:grid;gap:8px}
 .files label{font-weight:400}
 
-/* trial */
+/* trial screen */ /* this code section is used for the interactive EQ listening exercises */
 .topline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-bottom:14px}
 .axes{display:grid;grid-template-columns:auto auto 1fr;gap:6px 12px;align-items:center;font-size:.92rem;margin-bottom:16px}
 .axes .k{color:var(--muted)}
@@ -83,7 +83,7 @@ details .inner{margin-top:14px;display:grid;gap:14px}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
 .monitor{margin-bottom:14px}
-canvas{display:block;width:100%}
+canvas{display:block;width:100%} /* canvas is drawn by JavaScript, so its height is set in JS too */
 #plot{height:clamp(190px,34vw,270px)}
 .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.85rem;color:var(--muted);min-height:1.4em;margin:4px 0 0}
 .legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
@@ -99,7 +99,7 @@ canvas{display:block;width:100%}
 .msg{font-weight:500}
 .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
 
-/* summary */
+/* summary */ /* this code section is used for the results screen after a session */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
 .stat{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
 .stat .v{font-size:1.6rem;font-weight:700;line-height:1.2}
@@ -112,7 +112,7 @@ th{font-weight:600;color:var(--muted)}
 textarea{width:100%;height:150px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
 @media (prefers-reduced-motion:no-preference){button{transition:background-color .12s,border-color .12s}}
 
-/* v3 additions */
+/* v3 additions */ /* this code section is used for the step-by-step home screen and the confidence buttons in the trial */
 .steps{display:grid;gap:12px}
 .step{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
 .step.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
@@ -153,6 +153,8 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
 #trial .seg button{padding:7px 14px}
 .plotwrap{position:relative;flex:1 1 auto;min-height:140px}
 .plotwrap canvas{position:absolute;inset:0;width:100%;height:100%!important}
+#visualizer{z-index:0;pointer-events:none}
+#plot{z-index:1}
 #trial .legend{margin:0;min-height:1.2em;font-size:.82rem}
 #trial .strip{margin:0;padding:8px 14px;gap:6px 22px}
 #qSl:disabled{opacity:.55}
@@ -264,8 +266,12 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
       <span class="row" style="gap:8px"><label for="vol2" class="hint">Output</label><input id="vol2" type="range" min="0" max="1" step="0.01" value="0.4" style="width:110px"></span>
       <span class="msg" id="msg"></span>
     </div>
-    <!-- The canvas is drawn by JavaScript and displays the EQ curve and draggable response point. -->
-    <div class="plotwrap"><canvas id="plot" aria-label="EQ curve. Drag the dot to set frequency and gain."></canvas></div>
+    <!-- The visualiser sits behind the EQ curve so both share the same frequency axis. -->
+    <div class="plotwrap">
+      <canvas id="visualizer" aria-label="Live audio frequency visualiser"></canvas>
+      <!-- This canvas displays the EQ curve and draggable response point. -->
+      <canvas id="plot" aria-label="EQ curve. Drag the dot to set frequency and gain."></canvas>
+    </div>
     <!-- JavaScript adds labels here to explain the curves currently drawn on the canvas. -->
     <div class="legend" id="legend"></div>
     <!-- Range sliders are the alternative to dragging the point on the EQ graph. -->
@@ -410,9 +416,12 @@ function localState(pid) { return Object.assign(blankState(), readLocal(pid) || 
 function saveState(pid, st) { st.updated = Date.now(); writeLocal(pid, st); }
 
 /* ================= audio ================= */
-let ctx, src, tgt, usr, usr2, probe, qG, aG, fG, rG, master;
+let ctx, src, tgt, usr, usr2, probe, qG, aG, fG, rG, master, audioAnalyser;
 const stimBufs = [null, null, null, null];
 let curStim = -1, mon = 'q', comps = {q: 1, a: 1, r: 1};
+
+// The external visualiser asks for this analyser after the audio context is created.
+window.eqTrainerVisuals = {getAnalyser: () => audioAnalyser || null};
 
 async function ensureAudio() {
   if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
@@ -423,7 +432,12 @@ async function ensureAudio() {
   master = ctx.createGain(); master.gain.value = +$('vol').value;
   tgt.connect(qG); tgt.connect(usr2); usr2.connect(rG); usr.connect(aG);
   [qG, aG, fG, rG].forEach(g => g.connect(master));
-  master.connect(ctx.destination);
+  // Analyse the final signal after the selected EQ, then send the same signal to the speakers.
+  audioAnalyser = ctx.createAnalyser();
+  audioAnalyser.fftSize = 2048;
+  audioAnalyser.smoothingTimeConstant = 0.8;
+  master.connect(audioAnalyser);
+  audioAnalyser.connect(ctx.destination);
 }
 function normalise(buf, rmsTarget) {
   for (let c = 0; c < buf.numberOfChannels; c++) {
@@ -1076,5 +1090,7 @@ renderSteps();
 if ($('pid').value.trim()) loadParticipant();
 })();
 </script>
+<!-- This script draws the live audio spectrum on the visualiser canvas. -->
+<script src="eq-visualiser.js"></script>
 </body>
 </html>
