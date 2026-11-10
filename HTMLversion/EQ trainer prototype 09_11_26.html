@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- The head contains information about the page that is not shown as page content. -->
 <meta charset="utf-8">
+<!-- This makes the layout adapt to phones, tablets and desktop screens. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- The title appears in the browser tab. -->
 <title>Parametric EQ ear trainer</title>
+<!-- These links allow the page to use the Instrument Sans font. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- CSS below controls the colours, spacing and responsive layout of the page. -->
 <style>
 :root{
   --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1B2330; --muted:#5D6878; --line:#D3D9E1; --grid:#E3E8EE;
@@ -196,15 +201,19 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
 </style>
 </head>
 <body>
+<!-- main contains the complete visible application. JavaScript switches between its screens. -->
 <main>
+  <!-- Introductory heading and explanation shown above the home screen. -->
   <h1>Parametric EQ ear trainer</h1>
   <p class="lede">Learn to hear what an EQ is doing. You’ll listen to sounds with a hidden EQ applied and set your own EQ to match, using the four exercises from Jason Corey’s technical ear training method.</p>
 
-  <!-- HOME -->
+  <!-- HOME: participant details, audio level check and available sessions. -->
   <section id="home" class="panel stack">
+    <!-- The participant ID is used to save and retrieve progress in the browser. -->
     <div class="row">
       <div class="field"><label for="pid">Participant ID</label><input id="pid" type="text" placeholder="The ID your researcher gave you" autocomplete="off"></div>
     </div>
+    <!-- These fields collect background information about the participant. -->
     <div id="aboutBlock">
       <h2>About you</h2>
       <div class="row">
@@ -213,6 +222,7 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
         <div class="field"><label for="phones">Headphones (make and model)</label><input id="phones" type="text" placeholder="e.g. Sennheiser HD 600"></div>
       </div>
     </div>
+    <!-- The participant can test the sound and adjust the output volume before training. -->
     <div>
       <h2>Level check</h2>
       <p class="hint">Wear headphones. Play the test sound, set a comfortable level, then leave the volume alone.</p>
@@ -221,6 +231,7 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
         <label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="0.4">
       </div>
     </div>
+    <!-- JavaScript fills this area with the participant's familiarisation, tests and training sessions. -->
     <div>
       <h2>Your sessions</h2>
       <p class="hint" id="progressHint">Enter your participant ID to see your progress.</p>
@@ -231,8 +242,9 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
     </div>
   </section>
 
-  <!-- TRIAL -->
+  <!-- TRIAL: the interactive screen used for one EQ listening exercise at a time. -->
   <section id="trial" class="panel hidden">
+    <!-- The top bar shows which stage and exercise the participant is currently completing. -->
     <div class="tbar">
       <span><b id="stageTxt"></b> <span id="trialTxt"></span> <span class="hint" id="sessionTxt"></span></span>
       <div class="axes" id="axes" aria-label="Current exercise">
@@ -241,7 +253,9 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
         <span class="ax"><span class="k">Change</span><span class="meter" id="mP"></span><b id="vP"></b></span>
       </div>
     </div>
+    <!-- The instruction text and help button explain the current exercise. -->
     <div class="tline"><span id="intro"></span><button class="link" id="helpBtn">How to play</button></div>
+    <!-- These controls let the participant listen to different versions of the sound and pause audio. -->
     <div class="monitor row">
       <div class="seg" role="group" aria-label="Listen to">
         <button id="mF" data-m="f">Bypass</button><button id="mQ" data-m="q">Question</button><button id="mA" data-m="a">Your Response</button>
@@ -250,8 +264,11 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
       <span class="row" style="gap:8px"><label for="vol2" class="hint">Output</label><input id="vol2" type="range" min="0" max="1" step="0.01" value="0.4" style="width:110px"></span>
       <span class="msg" id="msg"></span>
     </div>
+    <!-- The canvas is drawn by JavaScript and displays the EQ curve and draggable response point. -->
     <div class="plotwrap"><canvas id="plot" aria-label="EQ curve. Drag the dot to set frequency and gain."></canvas></div>
+    <!-- JavaScript adds labels here to explain the curves currently drawn on the canvas. -->
     <div class="legend" id="legend"></div>
+    <!-- Range sliders are the alternative to dragging the point on the EQ graph. -->
     <div class="strip" aria-label="Your Response">
       <div class="knob"><label for="freqSl">Freq <span id="fOut"></span></label><input id="freqSl" type="range" min="0" max="8" step="1"></div>
       <div class="knob"><label for="gainSl">Gain <span id="gOut"></span></label><input id="gainSl" type="range" min="0" max="2" step="1"></div>
@@ -259,6 +276,7 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
     </div>
     <div class="bottom">
       <div class="confwrap" id="confRow">
+        <!-- Confidence buttons are created by JavaScript because their values are generated dynamically. -->
         <span style="font-weight:600">How sure are you?</span>
         <div class="seg" id="confSeg" role="group" aria-label="Confidence from 1, a guess, to 5, certain"></div>
         <span class="hint">1 = a guess, 5 = certain</span>
@@ -267,7 +285,7 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
     </div>
   </section>
 
-  <!-- POP-UP -->
+  <!-- POP-UP: reusable dialog for instructions, feedback and explanations. -->
   <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-card">
       <div class="kicker" id="modalKicker"></div>
@@ -277,9 +295,10 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
     </div>
   </div>
 
-  <!-- SUMMARY -->
+  <!-- SUMMARY: results shown after a session, including download and backup options. -->
   <section id="summary" class="panel hidden">
     <h2 id="sumTitle">Session complete</h2>
+    <!-- This box explains how to save and send the generated results file. -->
     <div class="sendbox">
       <p><b>Please send us your results.</b></p>
       <ol style="margin:0 0 12px;padding-left:20px">
@@ -289,8 +308,10 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
       <button id="dlBtn" class="primary">Download my results</button>
       <span id="dlMsg" class="hint" style="margin-left:10px"></span>
     </div>
+    <!-- JavaScript inserts overall statistics and a task-by-task table into these containers. -->
     <div class="stats" id="stats"></div>
     <div class="tablewrap"><table id="byTask"></table></div>
+    <!-- This canvas shows how the exercises changed and how well each answer scored. -->
     <div id="lanesBlock">
       <p class="hint" style="margin-bottom:6px">How the exercises changed during the session, with the score for each answer.</p>
       <canvas id="lanes" aria-label="Exercise path and scores"></canvas>
@@ -298,11 +319,13 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
     <div class="row" style="margin-top:18px">
       <button id="homeBtn">Back to my sessions</button>
     </div>
+    <!-- The details element keeps a text-based copy option hidden until it is needed. -->
     <details style="margin-top:16px"><summary>Download not working? Show the data as text</summary>
       <div class="inner"><button id="copyBtn" style="justify-self:start">Copy data</button><textarea id="csv" readonly></textarea></div>
     </details>
   </section>
 </main>
+<!-- The script contains the application logic and connects the controls above to the EQ trainer. -->
 <script>
 (() => {
 'use strict';
