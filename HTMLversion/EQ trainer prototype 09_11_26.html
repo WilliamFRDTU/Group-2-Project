@@ -1195,7 +1195,7 @@ document.addEventListener('keydown', e => {
   else if (/^[1-9]$/.test(k) && !c.submitted) userAdjust({fi: +k - 1});
   else if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k) && !c.submitted) {
     e.preventDefault();
-    // Changed the key mapping here to make it correspond with the eq logic: LEFT/RIGHT: change Freq; UP/DOWN: change Gain - Wieland 
+    // Changed the key mapping here to make it correspond with the eq logic: LEFT/RIGHT: change Freq; UP/DOWN: change Gain
     if (k === 'arrowright' || k === 'arrowleft') userAdjust({fi: Math.max(0, Math.min(FREQS.length - 1, c.ufi + (k === 'arrowright' ? 1 : -1)))});
     else { const gi = Math.max(0, Math.min(c.gopts.length - 1, c.gopts.indexOf(c.ug) + (k === 'arrowup' ? 1 : -1))); userAdjust({gain: c.gopts[gi]}); }
   } else if (e.key === 'Enter' && !$('goBtn').disabled && e.target.tagName !== 'BUTTON') { e.preventDefault(); go(); }
