@@ -552,28 +552,47 @@ function applyMon() {
 }
 
 /* ================= session ================= */
-let S = null, P = null; // S: running session; P: participant {pid, state}
+// S is the mutable state for the session currently shown on screen.
+// It is an object, not a class: S.stage identifies the stage, S.idx identifies
+// the current trial, S.cur stores the current trial, and S.rows stores results.
+// S.skill, S.cell, and S.atCell hold the adaptive-training progress.
+// P is the participant object: P.pid is the entered ID and P.state is the
+// participant's saved progress across sessions.
+let S = null, P = null;
 
+// Converts a three-number exercise configuration into its difficulty value.
 const diffOf = c => DIFF.s[c[0]] + DIFF.t[c[1]] + DIFF.p[c[2]];
+// Estimates the participant's probability of success for a configuration.
 const predict = c => sig(S.skill - diffOf(c));
+// Selects the configuration for trial i according to the current stage.
 function cfgFor(i) {
+  // Familiarisation uses the configuration attached to each introduction page.
   if (S.stage === 'fam') return FAM[i].cfg ? FAM[i].cfg.slice() : [0, 0, 0];
+  // Pre- and post-tests use a shuffled battery prepared when the session starts.
   if (S.stage === 'pre' || S.stage === 'post') return S.battery[i].slice();
+  // Structured training follows the fixed difficulty path from start to finish.
   if (S.stage === 'structured') return PATH[Math.min(PATH.length - 1, Math.floor(i / (S.total / PATH.length)))].slice();
+  // Adaptive training stays at the cell selected by chooseNext().
   return S.cell.slice();
 }
 // Adaptive: stay, or move one step on one axis, aiming at TARGET_P. Ties favour the axis furthest behind.
-function chooseNext(lastScore) {
+function chooseNext(lastPerformance) {
+  // cur is the current adaptive cell; each axis has a different number of levels.
   const cur = S.cell, sizes = [4, 4, 8], cands = [{c: cur, axis: -1}];
+  // Build candidates consisting of the current cell and its one-step neighbours.
   for (let a = 0; a < 3; a++) for (const d of [-1, 1]) {
     const v = cur[a] + d; if (v < 0 || v >= sizes[a]) continue;
     const c = cur.slice(); c[a] = v; cands.push({c, axis: a, dir: d});
   }
-  const mayMove = S.atCell >= MIN_AT_CELL || lastScore < 0.4;
+  // A poor answer permits movement immediately; otherwise the cell must be held
+  // for MIN_AT_CELL trials before the adaptive algorithm may move it.
+  const mayMove = S.atCell >= MIN_AT_CELL || lastPerformance < 0.5;
   let best = null;
   for (const k of cands) {
     if (k.axis >= 0 && !mayMove) continue;
+    // Choose the candidate whose predicted success is closest to the target.
     let cost = Math.abs(predict(k.c) - TARGET_P);
+    // Slightly discourage moving upward when already near the top of an axis.
     if (k.axis >= 0 && k.dir > 0) cost += 0.04 * (cur[k.axis] / (sizes[k.axis] - 1));
     if (!best || cost < best.cost) best = {...k, cost};
   }
@@ -679,8 +698,30 @@ $('plot').addEventListener('pointermove', e => { if (dragging && S.cur && !S.cur
 // Q is fixed at 2 (as in Corey’s trainer), so scrolling over the curve does nothing
 
 /* ================= trials ================= */
+// A trial has two levels of state:
+// - S describes the whole session and survives while the participant moves
+//   from one trial to the next.
+// - S.cur, commonly shortened to c below, describes only the current trial.
+//
+// The c object contains:
+//   cfg       the [stimulus, task, gain-set] difficulty coordinates
+//   tfi/tg    the hidden target frequency index and target gain
+//   ufi/ug    the participant's current frequency index and gain
+//   uqi       the participant's Q index (fixed to Q = 2 in this study)
+//   gopts     the gains that are legal answers for this task
+//   submitted whether the answer has already been checked
+//   locked    whether the Question is hidden in a memory exercise
+//   monTime   time spent listening to each monitor
+//   path      the participant's adjustment history for the exported results
+//
+// These are plain JavaScript objects, not instances of classes. The short
+// variable name c means "current trial"; S means "session".
+
+// Returns the monitor buttons that are valid for the current exercise.
 function allowedMons(c) {
+  // Free-play has no hidden Question, so only the response and bypass exist.
   if (c.sandbox) return ['a', 'f'];
+  // After submission, training exercises allow comparison with all monitors.
   if (c.submitted && S.stage !== 'pre' && S.stage !== 'post') return ['q', 'a', 'f'];
   switch (c.task) {
     case 'match': return ['q', 'a', 'f'];
@@ -689,38 +730,55 @@ function allowedMons(c) {
     default: return ['q', 'f'];               // absolute identification: only Question and Bypass (Corey, p. 44)
   }
 }
+// Builds the explanation of which audio monitors can be heard.
 function canHearHtml(c) {
+  // Keep the explanatory list in the same order as the monitor buttons.
   const ok = allowedMons(c), names = {f: 'Bypass', q: 'Question', a: 'Your Response'};
   return '<div class="callout"><b>You can hear:</b><div class="canhear">' + ['f', 'q', 'a'].map(m => `<span class="${ok.includes(m) ? 'y' : 'n'}">${names[m]}</span>`).join('') + '</div></div>';
 }
+// Explains why a monitor is disabled for the current exercise.
 function monReason(c, m) {
+  // Tooltips make a disabled monitor understandable instead of silently
+  // preventing the participant from selecting it.
   if (c.sandbox) return 'There is no Question in free play';
   if (m === 'q' && c.task === 'memory') return 'The Question is hidden once you move a control';
   if (m === 'a' && c.task === 'absolute') return 'In absolute identification you can’t hear your own EQ';
   return 'Not available in this exercise';
 }
+// Updates monitor button states, labels, and accessibility attributes.
 function renderMonitors() {
   const c = S.cur, ok = allowedMons(c);
+  // Each button stores its monitor key in data-m; update disabled state and
+  // aria-pressed together so the visual and accessible states stay in sync.
   ['mQ', 'mA', 'mF'].forEach(id => {
     const b = $(id), m = b.dataset.m;
     b.disabled = !ok.includes(m); b.setAttribute('aria-pressed', String(mon === m));
     b.title = b.disabled ? monReason(c, m) : '';
   });
 }
+// Switches the active audio monitor and records time spent listening.
 function setMon(m, user = true) {
   const c = S.cur; if (!allowedMons(c).includes(m)) return;
+  // Remember the last user-selected monitor so the next trial can reuse it
+  // when that monitor is valid for the new task.
   if (user) S.lastMon = m;
   if (m === mon) return;
   const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
   if (user && !c.submitted) c.switches++;
   mon = m; applyMon(); renderMonitors();
 }
+// Stores the participant's confidence rating for the current answer.
 function setConf(i) {
   const c = S.cur; if (c.submitted || c.sandbox) return;
+  // Confidence is deliberately not stored for free play because free play
+  // does not produce a scored answer.
   c.conf = i; [...$('confSeg').children].forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.c === i))); updateGo();
 }
+// Updates the answer button text and whether it can be pressed.
 function updateGo() {
   const c = S.cur, b = $('goBtn');
+  // Free play advances with Continue; submitted trials advance to the next
+  // question; unanswered trials require both a gain and confidence rating.
   if (c.sandbox) { b.disabled = false; b.textContent = 'Continue'; return; }
   if (c.submitted) { b.disabled = false; b.textContent = S.idx + 1 >= S.total ? 'See results' : 'Next question'; return; }
   const test = S.stage === 'pre' || S.stage === 'post';
@@ -728,30 +786,40 @@ function updateGo() {
   b.disabled = c.ug === 0 || c.conf == null;
 }
 
+// Creates the next trial, configures its audio filters, and refreshes the UI.
 function startTrial() {
   const i = S.idx, fam = S.stage === 'fam' ? FAM[i] : null;
   if (fam && fam.sandbox) {
+    // The first familiarisation page is a sandbox: it has no hidden target and
+    // gives the participant unrestricted access to the response EQ.
     S.cur = {sandbox: true, task: 'sandbox', cfg: [0, 0, 0], ufi: 4, ug: 6, uqi: TARGET_QI, gopts: [-12,-9,-6,-3,0,3,6,9,12],
       submitted: false, monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), switches: 0, path: [], adjustments: 0, t0: performance.now()};
     [usr, usr2].forEach(f => { f.frequency.value = 1000; f.gain.value = 6; f.Q.value = TARGET_Q; });
     setStim(0); updateComps(); mon = 'a'; applyMon();
   } else {
+    // For a scored trial, derive the task and its legal gain answers from the
+    // selected difficulty configuration.
     const cfg = cfgFor(i), task = TASKS[cfg[1]].id, gset = GAINS[cfg[2]].vals;
     let tfi; do { tfi = Math.floor(Math.random() * FREQS.length); } while (tfi === S.lastTfi);
     S.lastTfi = tfi;
     const tg = gset[Math.floor(Math.random() * gset.length)];
     const answerVals = task === 'flat' ? gset.map(v => -v) : gset.slice();
     const gopts = answerVals.length === 1 ? answerVals : [...new Set([0, ...answerVals])].sort((a, b) => a - b);
+    // Create the current-trial object. The initial response is centred at 1 kHz;
+    // a gain of zero means "not answered" unless the task supplies a fixed gain.
     S.cur = {cfg, task, tfi, tg, gopts, ufi: 4, ug: answerVals.length === 1 ? answerVals[0] : 0, uqi: TARGET_QI, conf: null,
       t0: performance.now(), firstAdj: null, adjustments: 0, path: [], switches: 0,
       monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), locked: false, submitted: false,
       pred: predict(cfg), skillBefore: S.skill};
     const c = S.cur;
+    // Configure the hidden target filter and the participant's two response
+    // filters, then start the corresponding stimulus buffer.
     tgt.frequency.value = FREQS[tfi]; tgt.gain.value = tg; tgt.Q.value = TARGET_Q;
     [usr, usr2].forEach(f => { f.frequency.value = FREQS[c.ufi]; f.gain.value = c.ug; f.Q.value = QS[c.uqi]; });
     setStim(cfg[0]); updateComps(); mon = allowedMons(S.cur).includes(S.lastMon) ? S.lastMon : 'q'; applyMon();
   }
   const c = S.cur;
+  // Refresh all visible fields after the new current-trial object is ready.
   $('trialTxt').textContent = `Trial ${i + 1} of ${S.total}`;
   $('axes').classList.toggle('hidden', !!c.sandbox);
   if (!c.sandbox) setMeters(c.cfg);
@@ -764,33 +832,67 @@ function startTrial() {
   syncControls(); renderMonitors(); refreshCurves(); updateGo();
 }
 
+// Applies a participant's frequency or gain adjustment to the response filters.
 function userAdjust({fi, gain, qi}) {
   const c = S.cur; if (c.submitted) return;
+  // The controls pass only the value that changed; unchanged values fall back
+  // to the current trial state. Q is forced to the study's fixed target Q.
   const nf = fi ?? c.ufi, ng = gain ?? c.ug, nq = TARGET_QI; // Q is locked at 2
   if (nf === c.ufi && ng === c.ug && nq === c.uqi) return;
   c.ufi = nf; c.ug = ng; c.uqi = nq;
   const t = Math.round(performance.now() - c.t0);
+  // Record both summary counts and a bounded adjustment path for the CSV.
   c.adjustments++; if (c.firstAdj == null) c.firstAdj = t;
   if (c.path.length < 300) c.path.push(`${t}:${FREQS[nf]}:${ng}:${QS[nq]}`);
   const now = ctx.currentTime;
   [usr, usr2].forEach(f => { f.frequency.setTargetAtTime(FREQS[nf], now, 0.01); f.gain.setTargetAtTime(ng, now, 0.01); f.Q.setTargetAtTime(QS[nq], now, 0.01); });
   if (c.task === 'memory' && !c.locked) {
+    // Memory trials hide the Question after the first adjustment.
     c.locked = true; if (mon === 'q') setMon('a', false);
     $('msg').textContent = 'Question hidden: match it from memory.'; $('msg').className = 'msg';
   }
   updateComps(); applyMon(); renderMonitors(); syncControls(); refreshCurves(); updateGo();
 }
 
+// Scores the current response, records trial data, and shows feedback when appropriate.
 function submit() {
   const c = S.cur; if (c.submitted || c.ug === 0 || c.conf == null) return;
+  // Ignore incomplete or repeated submissions. The timer includes listening,
+  // adjusting, and deciding, but not time spent reading a feedback modal.
   const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
   c.submitted = true; c.total = Math.round(now - c.t0);
   const correctGain = c.task === 'flat' ? -c.tg : c.tg;
   const octErr = c.ufi - c.tfi, gainErr = c.ug - correctGain;
-  const fScore = Math.max(0, 1 - Math.abs(octErr));
-  const gScore = Math.sign(c.ug) !== Math.sign(correctGain) ? 0 : Math.max(0, 1 - Math.abs(gainErr) / 12);
-  const score = Math.round((0.75 * fScore + 0.25 * gScore) * 1000) / 1000, exact = octErr === 0 && gainErr === 0;
+  // Frequency error is measured in octave steps because FREQS is octave-spaced.
+  // Gain error is measured directly in decibels. Flat tasks invert the target gain, because the participant must cancel the hidden EQ.
+  
+  // const fScore = Math.max(0, 1 - Math.abs(octErr));
+  // const gScore = Math.sign(c.ug) !== Math.sign(correctGain) ? 0 : Math.max(0, 1 - Math.abs(gainErr) / 12);
+  // const score = Math.round((0.75 * fScore + 0.25 * gScore) * 1000) / 1000, exact = octErr === 0 && gainErr === 0;
+
+  /* Rework scoring system into points rather than percentages.
+     The thresholds award 0-5 points based on frequency and gain error. */
+  let score, exact;
+  score = 0; // Initialize the score
+  exact = false; // Initialize the exact flag
+  if (Math.abs(octErr) > 2 || Math.abs(gainErr) > 12) {
+    score = 0; // 0 points for large errors
+  } else if (Math.abs(octErr) > 1 || Math.abs(gainErr) > 6) {
+    score = 1; // 1 point if you are off by more than 1 octave or 6 dB
+  } else if (Math.abs(octErr) > 0.5 || Math.abs(gainErr) > 3) {
+    score = 2; // 2 points if you are off by more than 0.5 octave or 3 dB
+  } else {
+    score = 5; // 5 points for an answer within 0.5 octave and 3 dB
+  }
+  // exact is kept separately from the point score for the feedback wording
+  // and the exact-answer count in the results report.
+  exact = octErr === 0 && gainErr === 0;
+
+  // Adaptive skill is updated after every scored response. The prediction
+  // stored in c.pred is the expected performance before this response.
+  const performance = score / 5; // Normalize score to a 0-1 range for skill update (this is to compare with the prediction value which is a sigmoid output between 0 and 1)
   S.skill += K * (score - c.pred);
+  // Store a flat export row so the researcher can analyse every trial later.
   S.rows.push({
     participant_id: P.pid, stage: S.stage, session_number: S.sessionNo, session_id: S.sid, training_group: S.group, session_minutes: S.sessionMinutes, session_trials: S.total,
     experience: P.state.background.exp || '', headphones: P.state.background.phones || '',
@@ -804,12 +906,15 @@ function submit() {
     ms_question: Math.round(c.monTime.q), ms_answer: Math.round(c.monTime.a), ms_flat: Math.round(c.monTime.f),
     adjust_path: c.path.join(';'), timestamp: new Date().toISOString()
   });
-  if (S.stage === 'adaptive') { S.atCell++; chooseNext(score); }
+  // Count time spent in the current adaptive cell, then select the next cell.
+  if (S.stage === 'adaptive') { S.atCell++; chooseNext(performance); }
+  // Save periodically so a browser close does not lose the whole session.
   if (S.rows.length % 5 === 0) saveState(P.pid, P.state);
   [...$('confSeg').children].forEach(b => b.disabled = true);
   $('msg').textContent = '';
   if (S.stage === 'pre' || S.stage === 'post') {
-    // no feedback in the tests: go straight on
+    // Pre- and post-tests intentionally provide no feedback, so move on
+    // immediately after recording the answer.
     syncControls(); renderMonitors(); updateGo(); go(); return;
   }
   showFeedback(c, {correctGain, octErr, gainErr, score, exact});
@@ -817,7 +922,10 @@ function submit() {
 }
 /* ---------- pop-ups ---------- */
 let modalOpen = false;
+// Opens a modal dialog, pauses audio, and wires its buttons.
 function openModal({kicker = '', title, titleClass = '', tone = '', html, buttons}) {
+  // The modal API accepts button descriptors rather than ready-made elements,
+  // which keeps feedback and instructional dialogs consistent.
   document.querySelector('.modal-card').className = 'modal-card ' + tone;
   $('modalKicker').textContent = kicker;
   $('modalTitle').textContent = title; $('modalTitle').className = titleClass;
@@ -826,29 +934,40 @@ function openModal({kicker = '', title, titleClass = '', tone = '', html, button
   let primary = null;
   buttons.forEach(bt => {
     const b = document.createElement('button'); b.textContent = bt.label; if (bt.primary) { b.className = 'primary'; primary = b; }
+    // Close first by default; keepOpen supports actions that replace the
+    // modal contents without briefly returning to the trial screen.
     b.addEventListener('click', () => { if (!bt.keepOpen) closeModal(); if (bt.onClick) bt.onClick(); });
     box.appendChild(b);
   });
   $('modal').classList.remove('hidden'); modalOpen = true; holdAudio(true);
   (primary || box.lastChild).focus();
 }
+// Closes the active modal dialog and resumes audio.
 function closeModal() { $('modal').classList.add('hidden'); modalOpen = false; holdAudio(false); }
 // the stimulus is silent while a pop-up is open, so players can read without noise
+// Mutes or restores the master audio gain while a modal is displayed.
 function holdAudio(on) {
   if (!master) return;
+  // Schedule the gain change on the audio clock to avoid clicks when a modal
+  // opens or closes.
   const t = ctx.currentTime; master.gain.cancelScheduledValues(t);
   if (on) master.gain.setValueAtTime(0, t); else master.gain.setTargetAtTime(+$('vol').value, t, 0.05);
 }
+// Displays a sequence of instructional pages in the modal dialog.
 function showPages(pages, lastLabel, i = 0, skipLabel = '') {
   const pg = pages[i], last = i === pages.length - 1;
+  // Re-open the same modal with a different page when Next or Back is used.
   openModal({kicker: `${i + 1} of ${pages.length}`, title: pg.title, html: pg.html, buttons: [
     ...(skipLabel && !last ? [{label: skipLabel}] : []),
     ...(i > 0 ? [{label: 'Back', onClick: () => showPages(pages, lastLabel, i - 1, skipLabel)}] : []),
     {label: last ? lastLabel : 'Next', primary: true, onClick: last ? null : () => showPages(pages, lastLabel, i + 1, skipLabel)}
   ]});
 }
+// Builds and displays the feedback summary for a completed trial.
 function showFeedback(c, {correctGain, octErr, gainErr, score, exact}) {
-  const fOk = octErr === 0, gOk = gainErr === 0, flat = c.task === 'flat';
+  // Convert numeric errors into participant-friendly messages and a compact
+  // comparison table. c still refers to the trial that was just submitted.
+  const fOk = octErr === 0, gOk = gainErr === 0, flat = c.task === 'flat'; // Sets the flags for correct frequency, gain, and flat task.
   const notes = [];
   if (!fOk) notes.push(`Your frequency was ${Math.abs(octErr)} octave${Math.abs(octErr) === 1 ? '' : 's'} too ${octErr > 0 ? 'high' : 'low'}.`);
   if (!gOk) notes.push(Math.sign(c.ug) !== Math.sign(correctGain) ? `You chose a ${c.ug > 0 ? 'boost' : 'cut'}, but it needed a ${correctGain > 0 ? 'boost' : 'cut'}.` : 'The gain was a different size.');
@@ -856,14 +975,17 @@ function showFeedback(c, {correctGain, octErr, gainErr, score, exact}) {
   const html = `<table class="fbt"><tr><th></th><th>${flat ? 'Correct answer' : 'Question'}</th><th>Your Response</th></tr>
     <tr><th>Frequency</th><td>${fmtHz(FREQS[c.tfi])}</td><td class="${fOk ? 'good' : 'wrong'}">${fmtHz(FREQS[c.ufi])} ${fOk ? '✓' : '✗'}</td></tr>
     <tr><th>Gain</th><td>${fmtDb(correctGain)}</td><td class="${gOk ? 'good' : 'wrong'}">${fmtDb(c.ug)} ${gOk ? '✓' : '✗'}</td></tr></table>
-    <p><span class="scoreline">Score: ${Math.round(score * 100)}%</span></p>${notes.map(n => `<p>${n}</p>`).join('')}
+    <p><span class="scoreline">Score: ${Math.max(0, score)} points</span></p>${notes.map(n => `<p>${n}</p>`).join('')}
     <p class="hint">Choose Listen again to compare the Question, Your Response and Bypass before moving on.</p>`;
   openModal({kicker: TASKS[c.cfg[1]].name, title: exact ? 'Correct!' : 'Not quite', titleClass: exact ? 'ok' : 'bad', tone: exact ? 'ok' : 'bad', html, buttons: [
     {label: 'Listen again'},
     {label: S.idx + 1 >= S.total ? 'See results' : 'Next question', primary: true, onClick: go}
   ]});
 }
+// Advances to the next trial or submits the current response.
 function go() {
+  // The same button is used for Continue, Next question, and Check Answer.
+  // A submitted or sandbox trial advances; an unanswered scored trial submits.
   if (modalOpen) closeModal();
   if (S.cur.sandbox || S.cur.submitted) { S.idx++; return S.idx >= S.total ? finish(true) : startTrial(); }
   submit();
@@ -934,7 +1056,7 @@ async function startStage(stage) {
   catch (e) { renderSteps(); return fail('Audio couldn’t start in this browser. Try Chrome, Edge, Firefox or Safari.'); }
   stopTest();
   const st = P.state, isTrain = stage === 'adaptive' || stage === 'structured';
-  S = {
+  S = { // S is the current session, which is reset at the start of each
     stage, group: isTrain ? stage : '', sid: `${safeSeg(P.pid)}_${stage}_${Date.now()}`, started: new Date().toISOString(),
     sessionNo: isTrain ? st[stage].sessions + 1 : 1,
     total: stage === 'fam' ? FAM.length : stage === 'pre' || stage === 'post' ? TEST_TRIALS : sessionTrials(),
@@ -968,13 +1090,13 @@ async function finish(complete) {
 }
 
 function renderReport() {
-  const rows = S.rows, n = rows.length, mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0, pct = x => Math.round(x * 100) + '%';
-  const stats = n ? [[pct(mean(rows.map(r => r.score))), 'average score'], [`${rows.filter(r => r.exact).length} of ${n}`, 'exact answers'],
+  const rows = S.rows, n = rows.length, mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0, pts = x => x;
+  const stats = n ? [[pts(mean(rows.map(r => r.score))), 'average score'], [`${rows.filter(r => r.exact).length} of ${n}`, 'exact answers'],
     [(mean(rows.map(r => r.total_ms)) / 1000).toFixed(1) + ' s', 'average time per answer']] : [['0', 'exercises answered']];
   $('stats').innerHTML = stats.map(([v, k]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
   const groups = TASKS.map(t => rows.filter(r => r.task === t.name)).filter(a => a.length);
   $('byTask').innerHTML = n ? '<tr><th>Exercise</th><th>Answers</th><th>Average score</th><th>Exact</th></tr>' + groups.map(a =>
-    `<tr><td>${a[0].task}</td><td>${a.length}</td><td>${pct(mean(a.map(r => r.score)))}</td><td>${pct(mean(a.map(r => r.exact)))}</td></tr>`).join('') : '';
+    `<tr><td>${a[0].task}</td><td>${a.length}</td><td>${pts(mean(a.map(r => r.score)))}</td><td>${pts(mean(a.map(r => r.exact)))}</td></tr>`).join('') : '';
   $('lanesBlock').classList.toggle('hidden', !(n && (S.stage === 'adaptive' || S.stage === 'structured')));
   $('dlMsg').textContent = '';
   drawLanes();
@@ -982,7 +1104,7 @@ function renderReport() {
 function drawLanes() {
   const cv = $('lanes'); if (!S || !cv.offsetParent || !S.rows.length) return;
   const rows = S.rows, {g, w, h} = setupCanvas(cv), L = 120, R = 10, B = 34, n = rows.length;
-  const lanes = [['Stimulus type', 'stimulus_level', 4, '1–4'], ['Task', 'task_level', 4, '1–4'], ['Size of change', 'gain_level', 8, '1–8'], ['Score', 'score', 1, '0–1']];
+  const lanes = [['Stimulus type', 'stimulus_level', 4, '1–4'], ['Task', 'task_level', 4, '1–4'], ['Size of change', 'gain_level', 8, '1–8'], ['Score', 'score', 5, '0–5']];
   const lh = (h - B - 4) / lanes.length, X = i => L + (n === 1 ? (w - L - R) / 2 : i / (n - 1) * (w - L - R));
   g.clearRect(0, 0, w, h); g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.textBaseline = 'middle';
   lanes.forEach(([label, key, max, range], li) => {
@@ -991,7 +1113,7 @@ function drawLanes() {
     g.fillStyle = css('--ink'); g.textAlign = 'left'; g.font = '600 12px "Instrument Sans", system-ui, sans-serif'; g.fillText(label, 0, (top + bot) / 2 - 7);
     g.fillStyle = css('--muted'); g.font = '11px "Instrument Sans", system-ui, sans-serif'; g.fillText(`level ${range}, harder ↑`.replace('level 0–1, harder ↑', '0–1, better ↑'), 0, (top + bot) / 2 + 8);
     g.font = '12px "Instrument Sans", system-ui, sans-serif';
-    if (key === 'score') rows.forEach((r, i) => { g.fillStyle = css(r.exact ? '--ok' : r.score >= 0.5 ? '--guess' : '--bad'); g.beginPath(); g.arc(X(i), Y(r.score), 3, 0, 7); g.fill(); });
+    if (key === 'score') rows.forEach((r, i) => { g.fillStyle = css(r.exact ? '--ok' : r.score >= 5 ? '--ok' : r.score >= 2 ? '--guess' : '--bad'); g.beginPath(); g.arc(X(i), Y(r.score), 3, 0, 7); g.fill(); });
     else {
       g.strokeStyle = css('--accent'); g.lineWidth = 2; g.beginPath();
       rows.forEach((r, i) => { const y = Y(r[key]); if (!i) g.moveTo(X(i), y); else { g.lineTo(X(i), Y(rows[i - 1][key])); g.lineTo(X(i), y); } });
