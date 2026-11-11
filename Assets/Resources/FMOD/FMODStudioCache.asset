@@ -47,6 +47,26 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 12492
+--- !u!114 &-3342198664467277889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/Master.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: FMODfiles/FMODprojectv2/Build/Desktop/Master.bank
+  Name: Master
+  StudioPath: bank:/Master
+  lastModified: 639281916053576485
+  FileSizes:
+  - Name: Desktop
+    Value: 154944
+  Exists: 1
 --- !u!114 &-977340434498680240
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87,27 +107,20 @@ MonoBehaviour:
   m_Name: FMODStudioCache
   m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EventCache
   EditorBanks:
-  - {fileID: -7948318166075272439}
-  - {fileID: 4230170397740200806}
+  - {fileID: 8413637023635770032}
+  - {fileID: -3342198664467277889}
   EditorEvents:
-  - {fileID: 4529830029315183235}
-  - {fileID: -977340434498680240}
-  - {fileID: -6795001346160400126}
-  - {fileID: 2317672832606383835}
+  - {fileID: 7017162546329932160}
   EditorParameters: []
   MasterBanks:
-  - {fileID: 4230170397740200806}
+  - {fileID: -3342198664467277889}
   StringsBanks:
-  - {fileID: -7948318166075272439}
+  - {fileID: 8413637023635770032}
   cacheVersion: 132096
-  cacheTime: 639280237597444023
+  cacheTime: 639281916053587675
   SerializableEventsDict:
-  - key: event:/In the world strings_piano_guitar
+  - key: event:/MellowChord1
     index: 0
-  - key: event:/Nic Hanson drums
-    index: 1
-  - key: event:/Nic Hanson drums 2
-    index: 2
 --- !u!114 &2317672832606383835
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -182,3 +195,50 @@ MonoBehaviour:
   MinDistance: 1
   MaxDistance: 20
   Length: 15718
+--- !u!114 &7017162546329932160
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceb653cd98e289a4e8697a1af55201f2, type: 3}
+  m_Name: event:/MellowChord1
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorEventRef
+  Path: event:/MellowChord1
+  Guid:
+    Data1: 1446043398
+    Data2: 1319075181
+    Data3: -1363765319
+    Data4: 694464273
+  Banks:
+  - {fileID: -3342198664467277889}
+  IsStream: 1
+  Is3D: 0
+  IsOneShot: 1
+  Parameters: []
+  MinDistance: 1
+  MaxDistance: 20
+  Length: 13640
+--- !u!114 &8413637023635770032
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/Master.strings.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: FMODfiles/FMODprojectv2/Build/Desktop/Master.strings.bank
+  Name: Master.strings
+  StudioPath: bank:/Master.strings
+  lastModified: 639281916053587675
+  FileSizes:
+  - Name: Desktop
+    Value: 774
+  Exists: 1
