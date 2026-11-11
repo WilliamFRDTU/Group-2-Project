@@ -618,7 +618,7 @@ function syncControls() {
   const c = S.cur;
   $('freqSl').value = c.ufi; $('fOut').textContent = fmtHz(FREQS[c.ufi]);
   $('gainSl').max = c.gopts.length - 1; $('gainSl').value = c.gopts.indexOf(c.ug);
-  $('gOut').textContent = c.ug === 0 ? 'not set' : fmtDb(c.ug);
+  $('gOut').textContent = c.ug == null ? 'not set' : fmtDb(c.ug);
   $('qSl').value = c.uqi; $('qOut').textContent = QS[c.uqi].toFixed(1);
   const lock = c.submitted;
   $('freqSl').disabled = lock; $('qSl').disabled = true; $('gainSl').disabled = lock || c.gopts.length < 2;
@@ -675,7 +675,7 @@ function refreshCurves() {
     leg += `<span><i style="background:var(--accent)"></i>Question: ${fmtHz(FREQS[c.tfi])}, ${fmtDb(c.tg)}</span>`;
   }
   curves.push({mag: resp(FREQS[c.ufi], c.ug, QS[c.uqi]), color: '--guess', width: 2.5, dash: c.submitted ? [6, 5] : []});
-  leg += `<span><i style="background:var(--guess)"></i>Your Response: ${fmtHz(FREQS[c.ufi])}, ${c.ug === 0 ? 'gain not set' : fmtDb(c.ug)}, Q 2</span>`;
+  leg += `<span><i style="background:var(--guess)"></i>Your Response: ${fmtHz(FREQS[c.ufi])}, ${c.ug == null ? 'gain not set' : fmtDb(c.ug)}, Q 2</span>`;
   $('legend').innerHTML = leg;
   drawPlot();
 }
@@ -783,7 +783,7 @@ function updateGo() {
   if (c.submitted) { b.disabled = false; b.textContent = S.idx + 1 >= S.total ? 'See results' : 'Next question'; return; }
   const test = S.stage === 'pre' || S.stage === 'post';
   b.textContent = test ? (S.idx + 1 >= S.total ? 'Finish test' : 'Next question') : 'Check Answer';
-  b.disabled = c.ug === 0 || c.conf == null;
+  b.disabled = c.ug == null || c.conf == null;
 }
 
 // Creates the next trial, configures its audio filters, and refreshes the UI.
@@ -806,8 +806,8 @@ function startTrial() {
     const answerVals = task === 'flat' ? gset.map(v => -v) : gset.slice();
     const gopts = answerVals.length === 1 ? answerVals : [...new Set([0, ...answerVals])].sort((a, b) => a - b);
     // Create the current-trial object. The initial response is centred at 1 kHz;
-    // a gain of zero means "not answered" unless the task supplies a fixed gain.
-    S.cur = {cfg, task, tfi, tg, gopts, ufi: 4, ug: answerVals.length === 1 ? answerVals[0] : 0, uqi: TARGET_QI, conf: null,
+    // A missing gain is distinct from a valid 0 dB answer.
+    S.cur = {cfg, task, tfi, tg, gopts, ufi: 4, ug: answerVals.length === 1 ? answerVals[0] : null, uqi: TARGET_QI, conf: null,
       t0: performance.now(), firstAdj: null, adjustments: 0, path: [], switches: 0,
       monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), locked: false, submitted: false,
       pred: predict(cfg), skillBefore: S.skill};
@@ -856,7 +856,7 @@ function userAdjust({fi, gain, qi}) {
 
 // Scores the current response, records trial data, and shows feedback when appropriate.
 function submit() {
-  const c = S.cur; if (c.submitted || c.ug === 0 || c.conf == null) return;
+  const c = S.cur; if (c.submitted || c.ug == null || c.conf == null) return;
   // Ignore incomplete or repeated submissions. The timer includes listening,
   // adjusting, and deciding, but not time spent reading a feedback modal.
   const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
@@ -890,8 +890,8 @@ function submit() {
 
   // Adaptive skill is updated after every scored response. The prediction
   // stored in c.pred is the expected performance before this response.
-  const performance = score / 5; // Normalize score to a 0-1 range for skill update (this is to compare with the prediction value which is a sigmoid output between 0 and 1)
-  S.skill += K * (score - c.pred);
+  const normalizedPerformance = score / 5; // Normalize score to a 0-1 range for skill update (this is to compare with the prediction value which is a sigmoid output between 0 and 1)
+  S.skill += K * (normalizedPerformance - c.pred);
   // Store a flat export row so the researcher can analyse every trial later.
   S.rows.push({
     participant_id: P.pid, stage: S.stage, session_number: S.sessionNo, session_id: S.sid, training_group: S.group, session_minutes: S.sessionMinutes, session_trials: S.total,
@@ -907,7 +907,7 @@ function submit() {
     adjust_path: c.path.join(';'), timestamp: new Date().toISOString()
   });
   // Count time spent in the current adaptive cell, then select the next cell.
-  if (S.stage === 'adaptive') { S.atCell++; chooseNext(performance); }
+  if (S.stage === 'adaptive') { S.atCell++; chooseNext(normalizedPerformance); }
   // Save periodically so a browser close does not lose the whole session.
   if (S.rows.length % 5 === 0) saveState(P.pid, P.state);
   [...$('confSeg').children].forEach(b => b.disabled = true);
