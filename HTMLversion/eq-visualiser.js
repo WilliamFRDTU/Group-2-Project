@@ -35,6 +35,10 @@
     const rect = canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      resize();
+    }
 
     context.clearRect(0, 0, width, height);
     context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#EEF1F4';
@@ -72,9 +76,11 @@
         gradient.addColorStop(position, colors[i]);
       }
 
-      context.fillStyle = gradient;
+      context.strokeStyle = gradient;
+      context.lineWidth = 3;
+      context.lineJoin = 'round';
+      context.lineCap = 'round';
       context.beginPath();
-      context.moveTo(PAD_L, height);
 
       let started = false;
       for (let i = 0; i < values.length; i++) {
@@ -85,15 +91,14 @@
         const level = values[i] / 255;
         const y = height - level * height * 0.8;
         if (!started) {
-          context.lineTo(x, height);
+          context.moveTo(x, y);
           started = true;
+        } else {
+          context.lineTo(x, y);
         }
-        context.lineTo(x, y);
       }
 
-      context.lineTo(width - PAD_R, height);
-      context.closePath();
-      context.fill();
+      if (started) context.stroke();
     } else {
       context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#5D6878';
       context.font = '12px "Instrument Sans", system-ui, sans-serif';
