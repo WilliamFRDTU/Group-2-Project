@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- The head contains information about the page that is not shown as page content. -->
+<meta charset="utf-8">
+<!-- This makes the layout adapt to phones, tablets and desktop screens. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- The title appears in the browser tab. -->
+<title>Parametric EQ ear trainer</title>
+<!-- These links allow the page to use the Instrument Sans font. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- CSS below controls the colours, spacing and responsive layout of the page. -->
+<style>
+:root{
+  --bg:#EEF1F4; --panel:#FFFFFF; --ink:#1B2330; --muted:#5D6878; --line:#D3D9E1; --grid:#E3E8EE;
+  --accent:#2B47C9; --accent-ink:#FFFFFF; --guess:#B87908; --ok:#24804F; --bad:#B93A26; --focus:#2B47C9;
+  --info-bg:#E7ECFB; --ok-bg:#E3F3EA; --bad-bg:#FAE8E4; --warn-bg:#FBF0DA; --low:#B4531A; --mid:#24804F; --high:#2B47C9;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141920; --panel:#1C232D; --ink:#E5E9EF; --muted:#96A1B0; --line:#313B48; --grid:#252E39;
+    --accent:#7F95FF; --accent-ink:#0F1420; --guess:#E2AD44; --ok:#55C08A; --bad:#F07A62; --focus:#9DAEFF;
+    --info-bg:#1F2846; --ok-bg:#16301F; --bad-bg:#3A1F1A; --warn-bg:#352911; --low:#F0A06A; --mid:#55C08A; --high:#8EA2FF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141920; --panel:#1C232D; --ink:#E5E9EF; --muted:#96A1B0; --line:#313B48; --grid:#252E39;
+  --accent:#7F95FF; --accent-ink:#0F1420; --guess:#E2AD44; --ok:#55C08A; --bad:#F07A62; --focus:#9DAEFF;
+    --info-bg:#1F2846; --ok-bg:#16301F; --bad-bg:#3A1F1A; --warn-bg:#352911; --low:#F0A06A; --mid:#55C08A; --high:#8EA2FF;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;font-variant-numeric:tabular-nums}
+main{max-width:1180px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(1.6rem,4vw,2.2rem);line-height:1.15;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em}
+h2{font-size:1.12rem;margin:0 0 10px;font-weight:600}
+p{margin:0 0 12px;max-width:68ch}
+.lede{color:var(--muted);margin-bottom:24px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+.stack>*+*{margin-top:22px}
+label{font-weight:500}
+input[type=text],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;max-width:100%}
+input[type=text]{width:320px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.choice{display:block;border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;background:var(--bg)}
+.choice:has(input:checked){border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.choice input{margin:0 8px 0 0;accent-color:var(--accent)}
+.choice small{display:block;color:var(--muted);font-weight:400;margin-top:2px;padding-left:22px}
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.field{display:flex;flex-direction:column;gap:4px}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 16px;font-weight:500}
+button:hover:not(:disabled){border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input[type=range]{accent-color:var(--accent)}
+.hint{color:var(--muted);font-size:.9rem}
+.hidden{display:none!important}
+details{border-top:1px solid var(--line);padding-top:16px}
+summary{cursor:pointer;font-weight:600}
+details .inner{margin-top:14px;display:grid;gap:14px}
+.files{display:grid;gap:8px}
+.files label{font-weight:400}
+
+/* trial screen */ /* this code section is used for the interactive EQ listening exercises */
+.topline{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 20px;margin-bottom:14px}
+.axes{display:grid;grid-template-columns:auto auto 1fr;gap:6px 12px;align-items:center;font-size:.92rem;margin-bottom:16px}
+.axes .k{color:var(--muted)}
+.meter{display:flex;gap:3px}
+.meter span{width:18px;height:10px;border-radius:2px;background:var(--grid);border:1px solid var(--line)}
+.meter span.on{background:var(--accent);border-color:var(--accent)}
+.axes .v{font-weight:600}
+.practice{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.instr{margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;padding:10px 18px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.monitor{margin-bottom:14px}
+canvas{display:block;width:100%} /* canvas is drawn by JavaScript, so its height is set in JS too */
+#plot{height:clamp(190px,34vw,270px)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:.85rem;color:var(--muted);min-height:1.4em;margin:4px 0 0}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.freqwrap{position:relative;margin-top:6px}
+#freq{display:block;width:100%;margin:0;height:28px}
+.ticks{position:relative;height:18px;font-size:.75rem;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.ctrlrow{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+@media (min-width:640px){.ctrlrow{grid-template-columns:auto auto 1fr}}
+.ctrl h3{font-size:.9rem;font-weight:600;margin:0 0 6px}
+.readout{font-weight:700;font-size:1.05rem}
+.feedback{min-height:52px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+.msg{font-weight:500}
+.msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+
+/* summary */ /* this code section is used for the results screen after a session */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
+.stat{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.stat .v{font-size:1.6rem;font-weight:700;line-height:1.2}
+.stat .k{color:var(--muted);font-size:.88rem}
+table{border-collapse:collapse;width:100%;font-size:.92rem;margin-bottom:18px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+#lanes{height:330px}
+textarea{width:100%;height:150px;font:13px/1.4 ui-monospace,Menlo,Consolas,monospace;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+@media (prefers-reduced-motion:no-preference){button{transition:background-color .12s,border-color .12s}}
+
+/* v3 additions */ /* this code section is used for the step-by-step home screen and the confidence buttons in the trial */
+.steps{display:grid;gap:12px}
+.step{display:grid;grid-template-columns:auto 1fr auto;gap:6px 14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg)}
+.step.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.step .num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--panel);border:1px solid var(--line)}
+.step.done .num{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.step h3{margin:0;font-size:1rem}
+.step p{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.step .status{font-size:.85rem;color:var(--muted)}
+.badge{display:inline-block;font-size:.75rem;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);margin-left:8px;vertical-align:middle}
+#plot{cursor:crosshair;touch-action:none}
+#plot.locked{cursor:default}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px 22px;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.knob label{display:flex;justify-content:space-between;font-size:.88rem;font-weight:600;margin-bottom:4px}
+.knob label span{font-weight:700;color:var(--guess)}
+.knob input{width:100%}
+.answerrow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;margin-top:14px}
+.intro{border-left:3px solid var(--accent);padding:6px 0 6px 14px;margin-bottom:14px}
+.intro b{display:block;margin-bottom:2px}
+.sendbox{padding:14px 16px;border-radius:12px;border:1px solid var(--accent);margin-bottom:18px}
+.sendstatus{padding:10px 14px;border-radius:10px;border:1px solid var(--line);margin-bottom:16px}
+.sendstatus.ok{border-color:var(--ok);color:var(--ok)}
+.sendstatus.bad{border-color:var(--bad);color:var(--bad)}
+
+/* v5: one-screen trial layout, Corey's labels, pop-ups */
+body.intrial main{padding:10px 14px;max-width:1000px}
+body.intrial main > h1, body.intrial main > .lede{display:none}
+#trial:not(.hidden){display:flex;flex-direction:column;gap:8px;padding:12px 16px;
+  height:calc(100dvh - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:520px}
+.tbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 18px;font-size:.92rem}
+#trial .axes{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0;font-size:.85rem}
+.ax{display:inline-flex;align-items:center;gap:6px}
+.ax .k{color:var(--muted)}
+#trial .meter span{width:12px;height:8px}
+.tline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:.92rem;color:var(--muted)}
+.tline b{color:var(--ink)}
+button.link{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;font-size:.9rem;font-weight:500}
+#trial .monitor{margin:0;gap:8px 12px}
+#trial .seg button{padding:7px 14px}
+.plotwrap{position:relative;flex:1 1 auto;min-height:140px}
+.plotwrap canvas{position:absolute;inset:0;width:100%;height:100%!important}
+#visualizer{z-index:0;pointer-events:none;background:#FFFFFF}
+#plot{z-index:1}
+#trial .legend{margin:0;min-height:1.2em;font-size:.82rem}
+#trial .strip{margin:0;padding:8px 14px;gap:6px 22px}
+#qSl:disabled{opacity:.55}
+.bottom{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px 14px;border-top:1px solid var(--line);padding-top:8px}
+.bottom > .row{margin-left:auto}
+.bottom .confwrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.9rem}
+#msg{font-size:.88rem}
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:rgba(10,14,22,.55)}
+.modal.hidden{display:none}
+.modal-card{width:100%;max-width:520px;max-height:90dvh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.modal-card h2{margin:0 0 4px;font-size:1.35rem}
+.modal-card .kicker{font-size:.8rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.modal-card p{margin:8px 0}
+.modal-card h2.ok{color:var(--ok)} .modal-card h2.bad{color:var(--bad)}
+.modal-btns{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;margin-top:18px}
+.modal-btns button:first-child:not(.primary):not(:only-child){margin-right:auto}
+.fbt{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:.95rem}
+.fbt th,.fbt td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left}
+.fbt td.good{color:var(--ok);font-weight:600} .fbt td.wrong{color:var(--bad);font-weight:600}
+.scoreline{font-size:1.05rem;font-weight:600}
+@media (max-height:600px){#trial:not(.hidden){height:auto}}
+
+/* v6: colour for information blocks */
+.tline{background:var(--info-bg);border-left:4px solid var(--accent);border-radius:8px;padding:6px 12px;color:var(--ink)}
+.tline b{color:var(--accent)}
+#msg:not(:empty){background:var(--warn-bg);color:var(--ink);border-left:4px solid var(--guess);border-radius:6px;padding:3px 10px}
+.modal-card{border-top:6px solid var(--accent)}
+.modal-card.ok{border-top-color:var(--ok)} .modal-card.bad{border-top-color:var(--bad)}
+.modal-card .kicker{display:inline-block;background:var(--info-bg);color:var(--accent);border-radius:999px;padding:3px 10px;text-transform:none;letter-spacing:0;font-size:.8rem}
+.modal-card.ok .kicker{background:var(--ok-bg);color:var(--ok)} .modal-card.bad .kicker{background:var(--bad-bg);color:var(--bad)}
+.callout{background:var(--info-bg);border-left:4px solid var(--accent);border-radius:8px;padding:8px 12px;margin:10px 0}
+.callout.tip{background:var(--warn-bg);border-left-color:var(--guess)}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+.chip{border-radius:10px;padding:8px 10px;border:2px solid currentColor;font-weight:600;line-height:1.3}
+.chip small{display:block;font-weight:400;color:var(--ink)}
+.chip.low{color:var(--low)} .chip.mid{color:var(--mid)} .chip.high{color:var(--high)}
+.chip.boost{color:var(--ok)} .chip.cut{color:var(--bad)}
+.canhear{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.canhear span{border-radius:999px;padding:2px 10px;font-size:.85rem;font-weight:600}
+.canhear .y{background:var(--ok-bg);color:var(--ok)} .canhear .n{background:var(--bad-bg);color:var(--bad);text-decoration:line-through}
+.fbt th{background:var(--info-bg)} .fbt tr:first-child th:first-child{background:transparent}
+.scoreline{display:inline-block;border-radius:8px;padding:4px 12px;background:var(--info-bg)}
+.modal-card.ok .scoreline{background:var(--ok-bg);color:var(--ok)} .modal-card.bad .scoreline{background:var(--bad-bg);color:var(--bad)}
+.modal-card.bad .scoreline.score-partial{background:var(--warn-bg);color:var(--guess)}
+.step.next{background:var(--info-bg)}
+.sendbox{background:var(--info-bg)}
+.hero{text-align:center;min-height:42vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:clamp(48px,12vh,120px) 12px}
+.hero h1{font-size:clamp(2.4rem,8vw,4.5rem);margin-bottom:26px}
+.hero p{margin:0 auto 24px;color:var(--muted)}
+.hero-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.hero-actions button{min-width:190px}
+#setupBlock{max-width:760px;margin:0 auto}
+
+/* v7: live EQ preview above the hero on the home page */
+.preview{border:1px solid var(--line);border-radius:16px;background:var(--bg);overflow:hidden}
+.pv-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 16px 6px}
+.pv-title{display:flex;align-items:center;gap:8px;font-weight:600;font-size:1.02rem}
+.pv-live{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.preview.is-silent .pv-live{background:var(--muted)}
+.pv-sub{color:var(--muted);font-size:.88rem;margin:2px 0 0;max-width:none}
+.pv-read{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto}
+.pv-chip{display:inline-flex;align-items:baseline;gap:6px;border-radius:999px;padding:3px 12px;font-size:.88rem;background:var(--info-bg);color:var(--accent)}
+.pv-chip small{font-size:.75rem;color:var(--muted);font-weight:500}
+.pv-chip b{display:inline-block;min-width:4.6em;text-align:right;font-weight:700}
+.pv-chip.q b{min-width:0}
+.pv-chip.boost{background:var(--ok-bg);color:var(--ok)}
+.pv-chip.cut{background:var(--bad-bg);color:var(--bad)}
+.pv-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:.88rem}
+.pv-btn svg{width:16px;height:16px;flex:none}
+.pv-btn .ic-off{display:none}
+.pv-btn[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.pv-btn[aria-pressed="true"] .ic-on{display:none}
+.pv-btn[aria-pressed="true"] .ic-off{display:block}
+.pv-stage{position:relative}
+#pvCanvas{height:clamp(210px,34vw,320px)}
+#pvVisualizer{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#pvCanvas{position:relative;z-index:1;pointer-events:none}
+.pv-unlock{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:8px;
+  border-radius:999px;padding:10px 18px;font-weight:600;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);
+  box-shadow:0 8px 28px rgba(0,0,0,.28);z-index:2}
+.pv-unlock svg{width:18px;height:18px}
+.preview .legend{padding:0 16px 14px;margin:0}
+.legend i.area{height:10px;width:18px;border-radius:2px;opacity:.5;vertical-align:-1px}
+.preview + .hero{padding-top:clamp(28px,6vh,64px)}
+@media (prefers-reduced-motion:no-preference){
+  .preview:not(.is-silent) .pv-live{animation:pvBlink 1.8s ease-in-out infinite}
+  @keyframes pvBlink{0%,100%{opacity:1}50%{opacity:.35}}
+}
+</style>
+</head>
+<body>
+<!-- main contains the complete visible application. JavaScript switches between its screens. -->
+<main>
+  <!-- HOME: participant details, audio level check and available sessions. -->
+  <section id="home" class="panel stack">
+    <!-- PREVIEW: the full mix plays through a moving EQ while the curve and live spectrum are drawn. Starts on page load. -->
+    <div class="preview" id="preview">
+      <div class="pv-head">
+        <div>
+          <div class="pv-title"><span class="pv-live" aria-hidden="true"></span>Hear what an EQ does</div>
+          <p class="pv-sub">A full mix with a moving EQ. Watch the curve and listen to the change.</p>
+        </div>
+        <div class="pv-read" aria-hidden="true">
+          <span class="pv-chip"><small>Freq</small><b id="pvFreq">250 Hz</b></span>
+          <span class="pv-chip" id="pvGainChip"><small>Gain</small><b id="pvGain">+9.0 dB</b></span>
+          <span class="pv-chip q"><small>Q</small><b>2</b></span>
+        </div>
+        <button id="pvMute" class="pv-btn" aria-pressed="false" title="Mute the preview">
+          <svg class="ic-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          <svg class="ic-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m16 9 5 6"/><path d="m21 9-5 6"/></svg>
+          Mute
+        </button>
+      </div>
+      <div class="pv-stage">
+        <canvas id="pvVisualizer" aria-label="Live full-mix frequency spectrum"></canvas>
+        <canvas id="pvCanvas" role="img" aria-label="Animated EQ curve moving over the live frequency spectrum of a full mix"></canvas>
+        <button id="pvUnlock" class="pv-unlock hidden">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          Tap to start playback
+        </button>
+      </div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>EQ curve</span><span><i class="area" style="background:var(--accent)"></i>Live spectrum of what you hear</span></div>
+    </div>
+    <div class="hero" id="hero">
+      <h1>EQ Ear Trainer</h1>
+      <p>Learn to hear what an EQ is doing and match hidden EQ settings.</p>
+      <div class="hero-actions">
+        <button class="primary" data-stage="tut">Start</button>
+      </div>
+    </div>
+    <div id="setupBlock" class="hidden">
+      <h2>Before you begin</h2>
+      <p class="hint">Enter your details, complete the level check, then continue to your selected session.</p>
+    <!-- The participant ID is used to save and retrieve progress in the browser. -->
+    <div class="row">
+      <div class="field"><label for="pid">Participant ID</label><input id="pid" type="text" placeholder="The ID your researcher gave you" autocomplete="off"></div>
+    </div>
+    <!-- These fields collect background information about the participant. -->
+    <div id="aboutBlock">
+      <h2>About you</h2>
+      <div class="row">
+        <div class="field"><label for="exp">Audio production experience</label>
+          <select id="exp"><option value="">Choose one</option><option>None</option><option>Under 1 year</option><option>1 to 3 years</option><option>3 to 10 years</option><option>More than 10 years</option></select></div>
+        <div class="field"><label for="phones">Headphones (make and model)</label><input id="phones" type="text" placeholder="e.g. Sennheiser HD 600"></div>
+      </div>
+    </div>
+    <!-- The participant can test the sound and adjust the output volume before training. -->
+    <div>
+      <h2>Level check</h2>
+      <p class="hint">Wear headphones. Play the test sound, set a comfortable level, then leave the volume alone.</p>
+      <div class="row">
+        <button id="testBtn">Play test sound</button>
+        <label for="vol">Volume</label><input id="vol" type="range" min="0" max="1" step="0.01" value="0.4">
+      </div>
+    </div>
+    <!-- JavaScript fills this area with the participant's tutorial and adaptive training sessions. -->
+    <div>
+      <h2>Your sessions</h2>
+      <p class="hint" id="progressHint">Enter your participant ID to see your progress.</p>
+      <div class="field" id="lenRow" style="margin-bottom:14px"><label for="lenSel">Training session length</label>
+        <select id="lenSel"><option value="15">15 minutes (36 exercises)</option><option value="25" selected>25 minutes (60 exercises)</option><option value="40">40 minutes (96 exercises)</option></select></div>
+      <p id="homeErr" class="msg bad hidden"></p>
+      <div class="steps" id="steps"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- TRIAL: the interactive screen used for one EQ listening exercise at a time. -->
+  <section id="trial" class="panel hidden">
+    <!-- The top bar shows which stage and exercise the participant is currently completing. -->
+    <div class="tbar">
+      <span><b id="stageTxt"></b> <span id="trialTxt"></span> <span class="hint" id="sessionTxt"></span></span>
+      <div class="axes" id="axes" aria-label="Current exercise">
+        <span class="ax"><span class="k">Stimulus</span><span class="meter" id="mS"></span><b id="vS"></b></span>
+        <span class="ax"><span class="k">Task</span><span class="meter" id="mT"></span><b id="vT"></b></span>
+        <span class="ax"><span class="k">Change</span><span class="meter" id="mP"></span><b id="vP"></b></span>
+      </div>
+    </div>
+    <!-- The instruction text and help button explain the current exercise. -->
+    <div class="tline"><span id="intro"></span><button class="link" id="helpBtn">How to play</button></div>
+    <!-- These controls let the participant listen to different versions of the sound and pause audio. -->
+    <div class="monitor row">
+      <div class="seg" role="group" aria-label="Listen to">
+        <button id="mF" data-m="f">Bypass</button><button id="mQ" data-m="q">Question</button><button id="mA" data-m="a">Your Response</button>
+      </div>
+      <button id="pauseBtn">Pause</button>
+      <span class="row" style="gap:8px"><label for="vol2" class="hint">Output</label><input id="vol2" type="range" min="0" max="1" step="0.01" value="0.4" style="width:110px"></span>
+      <span class="msg" id="msg"></span>
+      <button id="SpectrumToggle" data-m="s">Show spectrum</button>
+    </div>
+    <!-- The visualiser sits behind the EQ curve so both share the same frequency axis. -->
+    <div class="plotwrap">
+      <canvas id="visualizer" aria-label="Live audio frequency visualiser"></canvas>
+      <!-- This canvas displays the EQ curve and draggable response point. -->
+      <canvas id="plot" aria-label="EQ curve. Drag the dot to set frequency and gain."></canvas>
+    </div>
+    <!-- JavaScript adds labels here to explain the curves currently drawn on the canvas. -->
+    <div class="legend" id="legend"></div>
+    <!-- Range sliders are the alternative to dragging the point on the EQ graph. -->
+    <div class="strip" aria-label="Your Response">
+      <div class="knob"><label for="freqSl">Freq <span id="fOut"></span></label><input id="freqSl" type="range" min="0" max="8" step="1"></div>
+      <div class="knob"><label for="gainSl">Gain <span id="gOut"></span></label><input id="gainSl" type="range" min="0" max="2" step="1"></div>
+      <div class="knob"><label for="qSl">Q <span id="qOut"></span></label><input id="qSl" type="range" min="0" max="6" step="1" disabled title="Q is fixed at 2 for this training, as in Corey’s trainer"></div>
+    </div>
+    <div class="bottom">
+      <div class="confwrap" id="confRow">
+        <!-- Confidence buttons are created by JavaScript because their values are generated dynamically. -->
+        <span style="font-weight:600">How sure are you?</span>
+        <div class="seg" id="confSeg" role="group" aria-label="Confidence from 1, a guess, to 5, certain"></div>
+        <span class="hint">1 = a guess, 5 = certain</span>
+      </div>
+      <span class="row"><button id="endBtn">End session</button><button id="goBtn" class="primary" disabled>Check Answer</button></span>
+    </div>
+  </section>
+
+  <!-- POP-UP: reusable dialog for instructions, feedback and explanations. -->
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card">
+      <div class="kicker" id="modalKicker"></div>
+      <h2 id="modalTitle"></h2>
+      <div id="modalBody"></div>
+      <div class="modal-btns" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY: results shown after a session, including download and backup options. -->
+  <section id="summary" class="panel hidden">
+    <h2 id="sumTitle">Session complete</h2>
+    <!-- This box explains how to save and send the generated results file. -->
+    <div class="sendbox">
+      <p><b>Please send us your results.</b></p>
+      <ol style="margin:0 0 12px;padding-left:20px">
+        <li>Press <b>Download my results</b>. A file named <span id="fileName"></span> is saved to your Downloads folder.</li>
+        <li>Email that file as an attachment to <b id="emailTo"></b>.</li>
+      </ol>
+      <button id="dlBtn" class="primary">Download my results</button>
+      <span id="dlMsg" class="hint" style="margin-left:10px"></span>
+    </div>
+    <!-- JavaScript inserts overall statistics and a task-by-task table into these containers. -->
+    <div class="stats" id="stats"></div>
+    <div class="tablewrap"><table id="byTask"></table></div>
+    <!-- This canvas shows how the exercises changed and how well each answer scored. -->
+    <div id="lanesBlock">
+      <p class="hint" style="margin-bottom:6px">How the exercises changed during the session, with the score for each answer.</p>
+      <canvas id="lanes" aria-label="Exercise path and scores"></canvas>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button id="homeBtn">Back to my sessions</button>
+    </div>
+    <!-- The details element keeps a text-based copy option hidden until it is needed. -->
+    <details style="margin-top:16px"><summary>Download not working? Show the data as text</summary>
+      <div class="inner"><button id="copyBtn" style="justify-self:start">Copy data</button><textarea id="csv" readonly></textarea></div>
+    </details>
+  </section>
+</main>
+<!-- The script contains the application logic and connects the controls above to the EQ trainer. -->
+<script>
+(() => {
+'use strict';
+/* ================= researcher settings: edit these two lines before sending the file ================= */
+const RESEARCH_EMAIL = 'Create-26-med-7-group2@student.aau.dk';   // the address participants are asked to send their results file to
+const TRAINING_GROUP = 'adaptive';                      // The simplified version only includes adaptive training
+const SESSION_MINUTES = 0;                              // 0 lets the participant choose 15, 25 or 40 minutes; or set 15, 25 or 40 to fix it
+
+/* ================= study structure ================= */
+const STIMS = ['Pink noise', 'Drum kit', 'Drums and bass', 'Full mix'];
+const TASKS = [
+  {id:'match', name:'Matching'}, {id:'memory', name:'Matching memory'},
+  {id:'flat', name:'Return to flat'}, {id:'absolute', name:'Absolute identification'}
+];
+// Corey's gain combinations, easiest to hardest
+const GAINS = [
+  {label:'+12 dB', vals:[12]}, {label:'±12 dB', vals:[-12,12]}, {label:'+9 dB', vals:[9]}, {label:'±9 dB', vals:[-9,9]},
+  {label:'+6 dB', vals:[6]}, {label:'±6 dB', vals:[-6,6]}, {label:'+3 dB', vals:[3]}, {label:'±3 dB', vals:[-3,3]}
+];
+const INSTR = {
+  match: 'Match the hidden EQ. Compare Question, Your Response and Bypass as often as you like.',
+  memory: 'Listen to the Question first: it is hidden as soon as you move a control.',
+  flat: 'Cancel the hidden EQ so Your Response sounds the same as Bypass.',
+  absolute: 'Name the setting. You can only hear the Question and Bypass, not your own EQ.',
+  sandbox: 'Free play: drag the dot and compare Your Response with Bypass.'
+};
+// pop-up pages shown at the start of the tutorial
+const EQ_INTRO = [
+  {title: 'What is an EQ?', html: '<p>An equaliser, or EQ, turns particular frequencies in a sound up or down.</p><div class="callout">It’s like the bass and treble controls on a stereo, but much more precise: you choose exactly <b>which part</b> of the sound to change, and <b>by how much</b>.</div>'},
+  {title: 'Frequency: where', html: '<p>Every sound is a mix of low, middle and high frequencies, measured in hertz (Hz). Move the EQ left for lower frequencies and right for higher ones.</p><div class="chips"><span class="chip low">Low: 63–250 Hz<small>Weight and rumble</small></span><span class="chip mid">Middle: 500 Hz–2 kHz<small>Body</small></span><span class="chip high">High: 4–16 kHz<small>Brightness and air</small></span></div><div class="callout tip"><b>Tip from Corey:</b> link octaves to vowel sounds. 250 Hz “oo” as in boot, 500 Hz “oh” as in tow, 1 kHz “ah” as in father, 2 kHz “eh” as in bet, 4 kHz “ee” as in beet.</div>'},
+  {title: 'Gain: how much', html: '<p>Gain is how much that frequency is turned up or down, in decibels (dB).</p><div class="chips"><span class="chip boost">▲ Boost<small>Above the line: that part gets louder</small></span><span class="chip cut">▼ Cut<small>Below the line: that part gets quieter</small></span></div><div class="callout">+12 dB is a big, obvious change. ±3 dB is subtle. Boosts are easier to hear than cuts, so the game starts with boosts.</div>'},
+  {title: 'Q: how wide', html: '<p>Q sets how wide the change is. A low Q changes a broad range of frequencies; a high Q changes a narrow one.</p><div class="callout">In this training <b>Q is fixed at 2</b>, as in Jason Corey’s ear trainer, so you only need to find the <b>frequency</b> and the <b>gain</b>.</div>'},
+  {title: 'Try it', html: '<p>Drag the dot on the curve to move the EQ, or use the Freq and Gain sliders.</p><div class="callout">Switch between <b>Your Response</b> and <b>Bypass</b> (no EQ) to hear what it does. Try a few frequencies, with boosts and cuts.</div><p>Press <b>Continue</b> when you’re ready for the exercises.</p>'}
+];
+const HELP_HTML = '<p><b>Listen:</b> Question is the hidden EQ, Your Response is your EQ, and Bypass is the sound with no EQ. Not every exercise lets you hear all three.</p><p><b>Answer:</b> drag the dot on the curve, or use the Freq and Gain sliders. Q is fixed at 2.</p><p><b>Then:</b> choose how sure you are, and press Check Answer.</p><p><b>Keys (as in Corey’s trainer):</b> Q = Bypass, W = Question, E = Your Response, Space switches between the two sounds that matter in each exercise. Up and down arrows change the frequency, left and right arrows change the gain, and 1 to 9 jump to the octave frequencies (1 = 63 Hz … 9 = 16 kHz). Enter checks your answer.</p>';
+const FREQS = [63,125,250,500,1000,2000,4000,8000,16000];
+const QS = [0.5, 0.7, 1, 1.4, 2, 2.8, 4];
+const TARGET_Q = 2, TARGET_QI = QS.indexOf(2);
+
+// training session lengths: minutes -> trials
+const LENGTHS = [{min: 15, trials: 36}, {min: 25, trials: 60}, {min: 40, trials: 96}];
+
+const TUT = [
+  {sandbox: true, title: 'Meet the EQ'},
+  {cfg: [0,0,0], title: 'Exercise 1: matching', text: '<p>A hidden EQ has boosted one frequency of the pink noise. Listen to the <b>Question</b>, then move the dot until <b>Your Response</b> sounds the same. Compare with <b>Bypass</b> whenever you like.</p><p>In this exercise the gain is set for you, so you only need to find the frequency.</p>'},
+  {cfg: [0,0,1], title: 'Exercise 2: boost or cut', text: '<p>Now the hidden EQ might be a boost or a cut.</p><p>Find the frequency, then drag the dot above the line for a boost or below it for a cut.</p>'},
+  {cfg: [0,1,0], title: 'Exercise 3: matching memory', text: '<p>Listen carefully to the <b>Question</b> first.</p><p>As soon as you move a control, the Question is hidden and you match it from memory.</p>'},
+  {cfg: [0,2,0], title: 'Exercise 4: return to flat', text: '<p>The sound has been EQ’d. Set your EQ to cancel it, so <b>Your Response</b> sounds the same as <b>Bypass</b>.</p><p>To cancel a boost you need an equal cut at the same frequency. Your gain is set to the opposite of the hidden one, so you only need to find the frequency.</p>'},
+  {cfg: [0,3,0], title: 'Exercise 5: absolute identification', text: '<p>The hardest exercise. You can hear the <b>Question</b> and <b>Bypass</b>, but not your own EQ.</p><p>Move the dot to where you think the boost is, then check your answer.</p>'}
+];
+
+// Elo-style skill model: P(success) = logistic(skill - dS - dT - dP)
+const DIFF = {s:[0,0.5,0.9,1.3], t:[0,0.6,1.0,1.5], p:[0,0.35,0.6,0.95,1.2,1.55,1.85,2.25]};
+const SKILL0 = 1.1, K = 0.65, TARGET_P = 0.75, MIN_AT_CELL = 1;
+const EXACT_STREAK_FOR_TASK = 2, EXACT_STREAK_FOR_STIMULUS = 2;
+
+/* ================= helpers ================= */
+const $ = id => document.getElementById(id);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtHz = f => f >= 1000 ? (f / 1000) + ' kHz' : f + ' Hz';
+const fmtDb = g => (g > 0 ? '+' : g < 0 ? '−' : '') + Math.abs(g) + ' dB';
+const sig = x => 1 / (1 + Math.exp(-x));
+const safeSeg = s => String(s).replace(/[^A-Za-z0-9_.~:@+-]/g, '_').slice(0, 120) || 'x';
+const FMIN = 20, FMAX = 20000, PAD_L = 62, PAD_R = 24, DBR = 15, NF = 256;
+const xFrac = f => Math.log(f / FMIN) / Math.log(FMAX / FMIN);
+const freqs = new Float32Array(NF);
+for (let i = 0; i < NF; i++) freqs[i] = FMIN * Math.pow(FMAX / FMIN, i / (NF - 1));
+
+/* ================= storage: this browser only ================= */
+// Progress is kept in the participant's browser so they can come back on another day.
+// Participants download a results file and email it to RESEARCH_EMAIL (top of the script).
+const localKey = pid => 'eqtrainer:' + safeSeg(pid);
+const memStore = {};
+function readLocal(pid) { try { return JSON.parse(localStorage.getItem(localKey(pid)) || 'null'); } catch (e) { return memStore[pid] || null; } }
+function writeLocal(pid, st) { try { localStorage.setItem(localKey(pid), JSON.stringify(st)); } catch (e) { memStore[pid] = JSON.parse(JSON.stringify(st)); } }
+const blankState = () => ({updated: 0, background: {}, tut: null,
+  adaptive: {sessions: 0, trials: 0, skill: SKILL0, cell: [0, 0, 0], atCell: 0}});
+function localState(pid) { return Object.assign(blankState(), readLocal(pid) || {}); }
+function saveState(pid, st) { st.updated = Date.now(); writeLocal(pid, st); }
+
+/* ================= audio ================= */
+let ctx, src, tgt, usr, usr2, probe, qG, aG, fG, rG, master, audioAnalyser;
+const stimBufs = [null, null, null, null];
+let curStim = -1, mon = 'q', comps = {q: 1, a: 1, r: 1};
+
+// The external visualiser asks for this analyser after the audio context is created.
+window.eqTrainerVisuals = {getAnalyser: () => audioAnalyser || null};
+
+async function ensureAudio() {
+  if (ctx) { if (ctx.state === 'suspended') await ctx.resume(); return; }
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const mk = () => { const b = ctx.createBiquadFilter(); b.type = 'peaking'; b.gain.value = 0; return b; };
+  tgt = mk(); usr = mk(); usr2 = mk(); probe = mk();
+  [qG, aG, fG, rG] = [0, 0, 0, 0].map(() => { const g = ctx.createGain(); g.gain.value = 0; return g; });
+  master = ctx.createGain(); master.gain.value = +$('vol').value;
+  tgt.connect(qG); tgt.connect(usr2); usr2.connect(rG); usr.connect(aG);
+  [qG, aG, fG, rG].forEach(g => g.connect(master));
+  // Analyse the final signal after the selected EQ, then send the same signal to the speakers.
+  audioAnalyser = ctx.createAnalyser();
+  audioAnalyser.fftSize = 2048;
+  audioAnalyser.smoothingTimeConstant = 0.8;
+  master.connect(audioAnalyser);
+  audioAnalyser.connect(ctx.destination);
+}
+function normalise(buf, rmsTarget) {
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = buf.getChannelData(c); let s = 0, pk = 0;
+    for (let i = 0; i < d.length; i++) { s += d[i] * d[i]; pk = Math.max(pk, Math.abs(d[i])); }
+    const k = Math.min(rmsTarget / (Math.sqrt(s / d.length) || 1), 0.9 / (pk || 1));
+    for (let i = 0; i < d.length; i++) d[i] *= k;
+  }
+  return buf;
+}
+function makePink() {
+  const sr = ctx.sampleRate, n = sr * 8, b = ctx.createBuffer(1, n, sr), d = b.getChannelData(0);
+  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1;
+    b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759; b2=0.96900*b2+w*0.1538520;
+    b3=0.86650*b3+w*0.3104856; b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
+    d[i] = b0+b1+b2+b3+b4+b5+b6+w*0.5362; b6 = w*0.115926;
+  }
+  const f = Math.floor(sr * 0.01);
+  for (let i = 0; i < f; i++) { d[i] *= i / f; d[n - 1 - i] *= i / f; }
+  return normalise(b, 0.1);
+}
+// Synthesised music: 4 bars at 120 bpm (8 s), so the loop is seamless
+async function renderStim(level) {
+  const sr = ctx.sampleRate, oc = new OfflineAudioContext(1, sr * 8, sr);
+  const out = oc.createGain(); out.connect(oc.destination);
+  const nb = oc.createBuffer(1, sr, sr), nd = nb.getChannelData(0);
+  for (let i = 0; i < sr; i++) nd[i] = Math.random() * 2 - 1;
+  const env = (g, t, peak, dec, att = 0.002) => {
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec);
+  };
+  const noise = (t, dur, type, f, peak, dec) => {
+    const n = oc.createBufferSource(); n.buffer = nb;
+    const fl = oc.createBiquadFilter(); fl.type = type; fl.frequency.value = f;
+    const g = oc.createGain(); env(g, t, peak, dec);
+    n.connect(fl).connect(g).connect(out); n.start(t, Math.random() * 0.5); n.stop(t + dur);
+  };
+  const tone = (t, type, f0, f1, peak, dec) => {
+    const o = oc.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t); if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + 0.12);
+    const g = oc.createGain(); env(g, t, peak, dec); o.connect(g).connect(out); o.start(t); o.stop(t + dec + 0.05);
+  };
+  for (let bar = 0; bar < 4; bar++) for (let s = 0; s < 16; s++) {
+    const t = bar * 2 + s * 0.125;
+    if (s === 0 || s === 8 || s === 10 || (bar % 2 && s === 7)) { tone(t, 'sine', 150, 42, 1.0, 0.45); noise(t, 0.02, 'highpass', 3000, 0.12, 0.012); }
+    if (s === 4 || s === 12) { noise(t, 0.25, 'highpass', 1200, 0.55, 0.2); tone(t, 'triangle', 190, 160, 0.3, 0.12); }
+    if (s % 2 === 0) noise(t, 0.08, 'highpass', 7500, s === 14 && bar % 2 ? 0.25 : 0.18, s === 14 && bar % 2 ? 0.3 : 0.045);
+    if (s % 2 === 1 && level >= 3) noise(t, 0.05, 'highpass', 10000, 0.08, 0.03);
+  }
+  if (level >= 2) {
+    const roots = [55, 43.65, 65.41, 49], pat = [1,0,1,2,1,0,1.5,1];
+    roots.forEach((r, bar) => pat.forEach((m, k) => {
+      if (!m) return;
+      const t = bar * 2 + k * 0.25, o = oc.createOscillator(); o.type = 'sawtooth'; o.frequency.value = r * m;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 3;
+      fl.frequency.setValueAtTime(1400, t); fl.frequency.exponentialRampToValueAtTime(250, t + 0.2);
+      const g = oc.createGain(); env(g, t, 0.35, 0.22, 0.005);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 0.3);
+    }));
+  }
+  if (level >= 3) {
+    const chords = [[220,261.63,329.63],[174.61,220,261.63],[261.63,329.63,392],[196,246.94,293.66]];
+    chords.forEach((ch, bar) => ch.forEach(f => [-6, 6].forEach(c => {
+      const t = bar * 2, o = oc.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = c;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 2400;
+      const g = oc.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.035, t + 0.08);
+      g.gain.setValueAtTime(0.035, t + 1.85); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.99);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 2);
+    })));
+    const mel = [659.25,0,587.33,523.25, 440,0,523.25,587.33, 523.25,0,659.25,783.99, 659.25,587.33,0,0];
+    for (let rep = 0; rep < 2; rep++) mel.forEach((f, k) => {
+      if (!f) return;
+      const t = rep * 4 + k * 0.25, o = oc.createOscillator(); o.type = 'square'; o.frequency.value = f;
+      const fl = oc.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 4500;
+      const g = oc.createGain(); env(g, t, 0.06, 0.22, 0.01);
+      o.connect(fl).connect(g).connect(out); o.start(t); o.stop(t + 0.3);
+    });
+  }
+  return normalise(await oc.startRendering(), 0.1);
+}
+async function prepareStimuli() {
+  if (!stimBufs[0]) stimBufs[0] = makePink();
+  for (let i = 1; i < 4; i++) if (!stimBufs[i]) stimBufs[i] = await renderStim(i);
+}
+function setStim(i) {
+  if (curStim === i && src) return;
+  stopStim();
+  src = ctx.createBufferSource(); src.buffer = stimBufs[i]; src.loop = true;
+  src.connect(tgt); src.connect(usr); src.connect(fG); src.start(); curStim = i;
+}
+function stopStim() { if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; } curStim = -1; }
+
+function resp(f, g, q) {
+  probe.frequency.value = f; probe.gain.value = g; probe.Q.value = q;
+  const m = new Float32Array(NF), p = new Float32Array(NF); probe.getFrequencyResponse(freqs, m, p); return m;
+}
+// level matching: equal power per octave (pink spectrum), so average |H|^2 over log frequency
+const compOf = m => { let s = 0; for (let i = 0; i < NF; i++) s += m[i] * m[i]; return 1 / Math.sqrt(s / NF); };
+function updateComps() {
+  const c = S.cur, mu = resp(FREQS[c.ufi], c.ug, QS[c.uqi]);
+  if (c.sandbox) { comps = {q: 1, a: compOf(mu), r: 1}; return; }
+  const mt = resp(FREQS[c.tfi], c.tg, TARGET_Q);
+  comps = {q: compOf(mt), a: compOf(mu), r: compOf(mt.map((v, i) => v * mu[i]))};
+}
+function applyMon() {
+  if (!ctx || !S || !S.cur) return;
+  const t = ctx.currentTime, flatTask = S.cur.task === 'flat', set = (g, v) => g.gain.setTargetAtTime(v, t, 0.008);
+  set(qG, mon === 'q' ? comps.q : 0); set(fG, mon === 'f' ? 1 : 0);
+  set(aG, mon === 'a' && !flatTask ? comps.a : 0); set(rG, mon === 'a' && flatTask ? comps.r : 0);
+}
+
+/* ================= session ================= */
+// S is the mutable state for the session currently shown on screen.
+// It is an object, not a class: S.stage identifies the stage, S.idx identifies
+// the current trial, S.cur stores the current trial, and S.rows stores results.
+// S.skill, S.cell, and S.atCell hold the adaptive-training progress.
+// P is the participant object: P.pid is the entered ID and P.state is the
+// participant's saved progress across sessions.
+let S = null, P = null;
+
+// Converts a three-number exercise configuration into its difficulty value.
+const diffOf = c => DIFF.s[c[0]] + DIFF.t[c[1]] + DIFF.p[c[2]];
+// Estimates the participant's probability of success for a configuration.
+const predict = c => sig(S.skill - diffOf(c));
+// Selects the configuration for trial i according to the current stage.
+function cfgFor(i) {
+  // The tutorial uses the configuration attached to each introduction page.
+  if (S.stage === 'tut') return TUT[i].cfg ? TUT[i].cfg.slice() : [0, 0, 0];
+  // Adaptive training stays at the cell selected by chooseNext().
+  return S.cell.slice();
+}
+// Adaptive: stay, or move one step on one axis, aiming at TARGET_P. Ties favour the axis furthest behind.
+function chooseNext(lastPerformance) {
+  // cur is the current adaptive cell; each axis has a different number of levels.
+  const cur = S.cell, sizes = [4, 4, 8], cands = [{c: cur, axis: -1}];
+  // Build candidates consisting of the current cell and its one-step neighbours.
+  for (let a = 0; a < 3; a++) for (const d of [-1, 1]) {
+    const v = cur[a] + d; if (v < 0 || v >= sizes[a]) continue;
+    if (a === 1 && v < S.taskFloor) continue;
+    const c = cur.slice(); c[a] = v; cands.push({c, axis: a, dir: d});
+  }
+  // A poor answer permits movement immediately; otherwise the cell must be held
+  // for MIN_AT_CELL trials before the adaptive algorithm may move it.
+  const mayMove = S.atCell >= MIN_AT_CELL || lastPerformance < 0.5;
+  let best = null;
+  for (const k of cands) {
+    if (k.axis >= 0 && !mayMove) continue;
+    // Choose the candidate whose predicted success is closest to the target.
+    let cost = Math.abs(predict(k.c) - TARGET_P);
+    // Slightly discourage moving upward when already near the top of an axis.
+    if (k.axis >= 0 && k.dir > 0) cost += 0.04 * (cur[k.axis] / (sizes[k.axis] - 1));
+    if (!best || cost < best.cost) best = {...k, cost};
+  }
+  if (best.axis >= 0) { S.cell = best.c; S.atCell = 0; }
+}
+/* ================= UI pieces ================= */
+function buildStatic() {
+  [['mS', 4], ['mT', 4], ['mP', 8]].forEach(([id, n]) => { const m = $(id); m.innerHTML = ''; for (let i = 0; i < n; i++) m.appendChild(document.createElement('span')); });
+  const conf = $('confSeg'); conf.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button'); b.textContent = i; b.dataset.c = i; b.setAttribute('aria-pressed', 'false');
+    b.addEventListener('click', () => setConf(i)); conf.appendChild(b);
+  }
+  $('freqSl').max = FREQS.length - 1; $('qSl').max = QS.length - 1;
+}
+function setMeters(c) {
+  [['mS', c[0]], ['mT', c[1]], ['mP', c[2]]].forEach(([id, v]) => [...$(id).children].forEach((s, k) => s.classList.toggle('on', k <= v)));
+  $('vS').textContent = STIMS[c[0]]; $('vT').textContent = TASKS[c[1]].name; $('vP').textContent = GAINS[c[2]].label;
+}
+function syncControls() {
+  const c = S.cur;
+  $('freqSl').value = c.ufi; $('fOut').textContent = fmtHz(FREQS[c.ufi]);
+  $('gainSl').max = c.gopts.length - 1; $('gainSl').value = c.gopts.indexOf(c.ug);
+  $('gOut').textContent = c.ug == null ? 'not set' : fmtDb(c.ug);
+  $('qSl').value = c.uqi; $('qOut').textContent = QS[c.uqi].toFixed(1);
+  const lock = c.submitted;
+  $('freqSl').disabled = lock; $('qSl').disabled = true; $('gainSl').disabled = lock || c.gopts.length < 2;
+  $('plot').classList.toggle('locked', lock);
+}
+
+/* ================= plot ================= */
+let curves = [];
+function setupCanvas(cv) {
+  const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return {g, w: r.width, h: r.height};
+}
+function plotGeom() {
+  const cv = $('plot'), r = cv.getBoundingClientRect();
+  const top = 10, bot = r.height - 40, pw = r.width - PAD_L - PAD_R;
+  return {r, top, bot, pw, X: f => PAD_L + xFrac(f) * pw, Y: db => top + (DBR - db) / (2 * DBR) * (bot - top)};
+}
+function drawPlot() {
+  const cv = $('plot'); if (!cv.offsetParent || !S || !S.cur) return;
+  const {g, w} = setupCanvas(cv), {top, bot, pw, X, Y} = plotGeom();
+  g.clearRect(0, 0, w, cv.height); g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.lineWidth = 1;
+  g.strokeStyle = css('--grid'); g.fillStyle = css('--muted'); g.textAlign = 'center'; g.textBaseline = 'top';
+  FREQS.forEach(f => { g.beginPath(); g.moveTo(X(f), top); g.lineTo(X(f), bot); g.stroke(); g.fillText(f >= 1000 ? f / 1000 + 'k' : f, X(f), bot + 5); });
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  [-12, -6, 0, 6, 12].forEach(db => {
+    g.strokeStyle = db === 0 ? css('--line') : css('--grid'); g.lineWidth = db === 0 ? 1.5 : 1;
+    g.beginPath(); g.moveTo(PAD_L, Y(db)); g.lineTo(w - PAD_R, Y(db)); g.stroke();
+    g.fillText((db > 0 ? '+' : db < 0 ? '−' : '') + Math.abs(db), PAD_L - 8, Y(db));
+  });
+  // axis titles
+  g.fillStyle = css('--ink'); g.font = '600 12px "Instrument Sans", system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'bottom'; g.fillText('Frequency (Hz)', PAD_L + pw / 2, cv.getBoundingClientRect().height - 2);
+  g.save(); g.translate(14, (top + bot) / 2); g.rotate(-Math.PI / 2); g.textBaseline = 'middle'; g.fillText('Gain (dB)', 0, 0); g.restore();
+  g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.textAlign = 'right';
+  g.fillStyle = css('--ok'); g.textBaseline = 'top'; g.fillText('▲ Boost', w - PAD_R - 6, top + 4);
+  g.fillStyle = css('--bad'); g.textBaseline = 'bottom'; g.fillText('▼ Cut', w - PAD_R - 6, bot - 4);
+  curves.forEach(c => {
+    g.strokeStyle = css(c.color); g.lineWidth = c.width || 2.5; g.setLineDash(c.dash || []); g.beginPath();
+    for (let i = 0; i < NF; i++) {
+      const x = PAD_L + i / (NF - 1) * pw, y = Y(Math.max(-DBR, Math.min(DBR, 20 * Math.log10(c.mag[i]))));
+      i ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.stroke(); g.setLineDash([]);
+  });
+  const c = S.cur, nx = X(FREQS[c.ufi]), ny = Y(c.ug);
+  g.fillStyle = css('--guess'); g.strokeStyle = css('--panel'); g.lineWidth = 2;
+  g.beginPath(); g.arc(nx, ny, 9, 0, Math.PI * 2); g.fill(); g.stroke();
+}
+function refreshCurves() {
+  const c = S.cur; curves = []; let leg = '';
+  if (c.submitted) {
+    curves.push({mag: resp(FREQS[c.tfi], c.tg, TARGET_Q), color: '--accent', width: 3});
+    leg += `<span><i style="background:var(--accent)"></i>Question: ${fmtHz(FREQS[c.tfi])}, ${fmtDb(c.tg)}</span>`;
+  }
+  curves.push({mag: resp(FREQS[c.ufi], c.ug, QS[c.uqi]), color: '--guess', width: 2.5, dash: c.submitted ? [6, 5] : []});
+  leg += `<span><i style="background:var(--guess)"></i>Your Response: ${fmtHz(FREQS[c.ufi])}, ${c.ug == null ? 'gain not set' : fmtDb(c.ug)}, Q 2</span>`;
+  $('legend').innerHTML = leg;
+  drawPlot();
+}
+// drag the band like a DAW EQ node; values snap to the exercise's steps
+let dragging = false;
+function pointerToEQ(e) {
+  const {r, top, bot, pw} = plotGeom(), c = S.cur;
+  const fx = (e.clientX - r.left - PAD_L) / pw, f = FMIN * Math.pow(FMAX / FMIN, Math.max(0, Math.min(1, fx)));
+  let fi = 0; FREQS.forEach((v, i) => { if (Math.abs(Math.log(v / f)) < Math.abs(Math.log(FREQS[fi] / f))) fi = i; });
+  const db = DBR - (e.clientY - r.top - top) / (bot - top) * 2 * DBR;
+  let gain = c.gopts[0]; c.gopts.forEach(v => { if (Math.abs(v - db) < Math.abs(gain - db)) gain = v; });
+  return {fi, gain};
+}
+$('plot').addEventListener('pointerdown', e => {
+  if (!S || !S.cur || S.cur.submitted) return;
+  dragging = true; $('plot').setPointerCapture(e.pointerId); userAdjust(pointerToEQ(e));
+});
+$('plot').addEventListener('pointermove', e => { if (dragging && S.cur && !S.cur.submitted) userAdjust(pointerToEQ(e)); });
+['pointerup', 'pointercancel'].forEach(t => $('plot').addEventListener(t, () => { dragging = false; }));
+// Q is fixed at 2 (as in Corey’s trainer), so scrolling over the curve does nothing
+
+/* ================= trials ================= */
+// A trial has two levels of state:
+// - S describes the whole session and survives while the participant moves
+//   from one trial to the next.
+// - S.cur, commonly shortened to c below, describes only the current trial.
+//
+// The c object contains:
+//   cfg       the [stimulus, task, gain-set] difficulty coordinates
+//   tfi/tg    the hidden target frequency index and target gain
+//   ufi/ug    the participant's current frequency index and gain
+//   uqi       the participant's Q index (fixed to Q = 2 in this study)
+//   gopts     the gains that are legal answers for this task
+//   submitted whether the answer has already been checked
+//   locked    whether the Question is hidden in a memory exercise
+//   monTime   time spent listening to each monitor
+//   path      the participant's adjustment history for the exported results
+//
+// These are plain JavaScript objects, not instances of classes. The short
+// variable name c means "current trial"; S means "session".
+
+// Returns the monitor buttons that are valid for the current exercise.
+function allowedMons(c) {
+  // Free-play has no hidden Question, so only the response and bypass exist.
+  if (c.sandbox) return ['a', 'f'];
+  // After submission, training exercises allow comparison with all monitors.
+  if (c.submitted && S.stage !== 'pre' && S.stage !== 'post') return ['q', 'a', 'f'];
+  switch (c.task) {
+    case 'match': return ['q', 'a', 'f'];
+    case 'memory': return c.locked ? ['a', 'f'] : ['q', 'a', 'f'];
+    case 'flat': return ['q', 'a', 'f'];      // Corey: Your Response can be compared with Bypass
+    default: return ['q', 'f'];               // absolute identification: only Question and Bypass (Corey, p. 44)
+  }
+}
+// Builds the explanation of which audio monitors can be heard.
+function canHearHtml(c) {
+  // Keep the explanatory list in the same order as the monitor buttons.
+  const ok = allowedMons(c), names = {f: 'Bypass', q: 'Question', a: 'Your Response'};
+  return '<div class="callout"><b>You can hear:</b><div class="canhear">' + ['f', 'q', 'a'].map(m => `<span class="${ok.includes(m) ? 'y' : 'n'}">${names[m]}</span>`).join('') + '</div></div>';
+}
+// Explains why a monitor is disabled for the current exercise.
+function monReason(c, m) {
+  // Tooltips make a disabled monitor understandable instead of silently
+  // preventing the participant from selecting it.
+  if (c.sandbox) return 'There is no Question in free play';
+  if (m === 'q' && c.task === 'memory') return 'The Question is hidden once you move a control';
+  if (m === 'a' && c.task === 'absolute') return 'In absolute identification you can’t hear your own EQ';
+  return 'Not available in this exercise';
+}
+// Updates monitor button states, labels, and accessibility attributes.
+function renderMonitors() {
+  const c = S.cur, ok = allowedMons(c);
+  // Each button stores its monitor key in data-m; update disabled state and
+  // aria-pressed together so the visual and accessible states stay in sync.
+  ['mQ', 'mA', 'mF'].forEach(id => {
+    const b = $(id), m = b.dataset.m;
+    b.disabled = !ok.includes(m); b.setAttribute('aria-pressed', String(mon === m));
+    b.title = b.disabled ? monReason(c, m) : '';
+  });
+}
+// Updates the spectrum toggle button state and label. The user's visibility
+// preference persists when switching monitors, while Question always hides it.
+function syncSpectrumForMonitor(m) {
+  const visualizer = $('visualizer');
+  const spectrumToggle = $('SpectrumToggle');
+  const questionActive = m === 'q';
+  const visible = spectrumUserVisible && !questionActive;
+  visualizer.classList.toggle('hidden', !visible);
+  spectrumToggle.disabled = questionActive;
+  spectrumToggle.setAttribute('aria-disabled', String(questionActive));
+  spectrumToggle.classList.toggle('active', visible);
+  spectrumToggle.setAttribute('aria-pressed', String(visible));
+  spectrumToggle.textContent = visible ? 'Hide spectrum' : 'Show spectrum';
+}
+
+// Switches the active audio monitor and records time spent listening.
+function setMon(m, user = true) {
+  const c = S.cur; if (!allowedMons(c).includes(m)) return;
+  // Remember the last user-selected monitor so the next trial can reuse it
+  // when that monitor is valid for the new task.
+  if (user) S.lastMon = m;
+  if (m === mon) return;
+
+  const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
+  if (user && !c.submitted) c.switches++;
+  mon = m; applyMon(); renderMonitors(); syncSpectrumForMonitor(mon);
+}
+// Stores the participant's confidence rating for the current answer.
+function setConf(i) {
+  const c = S.cur; if (c.submitted || c.sandbox) return;
+  // Confidence is deliberately not stored for free play because free play
+  // does not produce a scored answer.
+  c.conf = i; [...$('confSeg').children].forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.c === i))); updateGo();
+}
+// Updates the answer button text and whether it can be pressed.
+function updateGo() {
+  const c = S.cur, b = $('goBtn');
+  // Free play advances with Continue; submitted trials advance to the next
+  // question; unanswered trials require both a gain and confidence rating.
+  if (c.sandbox) { b.disabled = false; b.textContent = 'Continue'; return; }
+  if (c.submitted) { b.disabled = false; b.textContent = S.idx + 1 >= S.total ? 'See results' : 'Next question'; return; }
+  b.textContent = 'Check Answer';
+  b.disabled = c.ug == null || c.conf == null;
+}
+
+// Creates the next trial, configures its audio filters, and refreshes the UI.
+function startTrial() {
+  const i = S.idx, tut = S.stage === 'tut' ? TUT[i] : null;
+  if (tut && tut.sandbox) {
+    // The first tutorial page is a sandbox: it has no hidden target and
+    // gives the participant unrestricted access to the response EQ.
+    S.cur = {sandbox: true, task: 'sandbox', cfg: [0, 0, 0], ufi: 4, ug: 6, uqi: TARGET_QI, gopts: [-12,-9,-6,-3,0,3,6,9,12],
+      submitted: false, monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), switches: 0, path: [], adjustments: 0, t0: performance.now()};
+    [usr, usr2].forEach(f => { f.frequency.value = 1000; f.gain.value = 6; f.Q.value = TARGET_Q; });
+    setStim(0); updateComps(); mon = 'a'; applyMon();
+  } else {
+    // For a scored trial, derive the task and its legal gain answers from the
+    // selected difficulty configuration.
+    const cfg = cfgFor(i), task = TASKS[cfg[1]].id, gset = GAINS[cfg[2]].vals;
+    let tfi; do { tfi = Math.floor(Math.random() * FREQS.length); } while (tfi === S.lastTfi);
+    S.lastTfi = tfi;
+    const tg = gset[Math.floor(Math.random() * gset.length)];
+    const answerVals = task === 'flat' ? gset.map(v => -v) : gset.slice();
+    const gopts = answerVals.length === 1 ? answerVals : [...new Set([0, ...answerVals])].sort((a, b) => a - b);
+    // Create the current-trial object. The initial response is centred at 1 kHz;
+    // A missing gain is distinct from a valid 0 dB answer.
+    S.cur = {cfg, task, tfi, tg, gopts, ufi: 4, ug: answerVals.length === 1 ? answerVals[0] : null, uqi: TARGET_QI, conf: null,
+      t0: performance.now(), firstAdj: null, adjustments: 0, path: [], switches: 0,
+      monTime: {q: 0, a: 0, f: 0}, monSince: performance.now(), locked: false, submitted: false,
+      pred: predict(cfg), skillBefore: S.skill};
+    const c = S.cur;
+    // Configure the hidden target filter and the participant's two response
+    // filters, then start the corresponding stimulus buffer.
+    tgt.frequency.value = FREQS[tfi]; tgt.gain.value = tg; tgt.Q.value = TARGET_Q;
+    [usr, usr2].forEach(f => { f.frequency.value = FREQS[c.ufi]; f.gain.value = c.ug; f.Q.value = QS[c.uqi]; });
+    setStim(cfg[0]); updateComps(); mon = allowedMons(S.cur).includes(S.lastMon) ? S.lastMon : 'q'; applyMon();
+  }
+  const c = S.cur;
+  syncSpectrumForMonitor(mon);
+  // Refresh all visible fields after the new current-trial object is ready.
+  $('trialTxt').textContent = `Trial ${i + 1} of ${S.total}`;
+  $('axes').classList.toggle('hidden', !!c.sandbox);
+  if (!c.sandbox) setMeters(c.cfg);
+  $('intro').innerHTML = `<b>${tut ? tut.title : TASKS[c.cfg[1]].name}:</b> ${INSTR[c.task]}`;
+  if (tut && tut.sandbox) showPages(EQ_INTRO, 'Start exploring', 0, 'I know EQ: skip this');
+  else if (tut) openModal({kicker: 'Tutorial', title: tut.title, html: tut.text + canHearHtml(S.cur), buttons: [{label: 'Start', primary: true}]});
+  $('confRow').classList.toggle('hidden', !!c.sandbox);
+  [...$('confSeg').children].forEach(b => { b.setAttribute('aria-pressed', 'false'); b.disabled = false; });
+  $('msg').textContent = ''; $('msg').className = 'msg';
+  syncControls(); renderMonitors(); refreshCurves(); updateGo();
+}
+
+// Applies a participant's frequency or gain adjustment to the response filters.
+function userAdjust({fi, gain, qi}) {
+  const c = S.cur; if (c.submitted) return;
+  // The controls pass only the value that changed; unchanged values fall back
+  // to the current trial state. Q is forced to the study's fixed target Q.
+  const nf = fi ?? c.ufi, ng = gain ?? c.ug, nq = TARGET_QI; // Q is locked at 2
+  if (nf === c.ufi && ng === c.ug && nq === c.uqi) return;
+  c.ufi = nf; c.ug = ng; c.uqi = nq;
+  const t = Math.round(performance.now() - c.t0);
+  // Record both summary counts and a bounded adjustment path for the CSV.
+  c.adjustments++; if (c.firstAdj == null) c.firstAdj = t;
+  if (c.path.length < 300) c.path.push(`${t}:${FREQS[nf]}:${ng}:${QS[nq]}`);
+  const now = ctx.currentTime;
+  [usr, usr2].forEach(f => { f.frequency.setTargetAtTime(FREQS[nf], now, 0.01); f.gain.setTargetAtTime(ng, now, 0.01); f.Q.setTargetAtTime(QS[nq], now, 0.01); });
+  if (c.task === 'memory' && !c.locked) {
+    // Memory trials hide the Question after the first adjustment.
+    c.locked = true; if (mon === 'q') setMon('a', false);
+    $('msg').textContent = 'Question hidden: match it from memory.'; $('msg').className = 'msg';
+  }
+  updateComps(); applyMon(); renderMonitors(); syncControls(); refreshCurves(); updateGo();
+}
+
+// Scores the current response, records trial data, and shows feedback when appropriate.
+function submit() {
+  const c = S.cur; if (c.submitted || c.ug == null || c.conf == null) return;
+  // Ignore incomplete or repeated submissions. The timer includes listening,
+  // adjusting, and deciding, but not time spent reading a feedback modal.
+  const now = performance.now(); c.monTime[mon] += now - c.monSince; c.monSince = now;
+  c.submitted = true; c.total = Math.round(now - c.t0);
+  const correctGain = c.task === 'flat' ? -c.tg : c.tg;
+  const octErr = c.ufi - c.tfi, gainErr = c.ug - correctGain;
+  // Frequency error is measured in octave steps because FREQS is octave-spaced.
+  // Gain error is measured directly in decibels. Flat tasks invert the target gain, because the participant must cancel the hidden EQ.
+  
+  // const fScore = Math.max(0, 1 - Math.abs(octErr));
+  // const gScore = Math.sign(c.ug) !== Math.sign(correctGain) ? 0 : Math.max(0, 1 - Math.abs(gainErr) / 12);
+  // const score = Math.round((0.75 * fScore + 0.25 * gScore) * 1000) / 1000, exact = octErr === 0 && gainErr === 0;
+
+  /* Rework scoring system into points rather than percentages.
+     The thresholds award 0-5 points based on frequency and gain error. */
+  let score, exact, totalScore;
+  score = 0; // Initialize the score
+  totalScore = 0; // Initialize the total score
+  exact = false; // Initialize the exact flag
+  if (Math.abs(octErr) > 2 || Math.abs(gainErr) > 12) {
+    score = 0; // 0 points for large errors
+  } else if (Math.abs(octErr) > 1 || Math.abs(gainErr) > 6) {
+    score = 1; // 1 point if you are off by more than 1 octave or 6 dB
+    totalScore += 1;
+  } else if (Math.abs(octErr) > 0.5 || Math.abs(gainErr) > 3) {
+    score = 2; // 2 points if you are off by more than 0.5 octave or 3 dB
+    totalScore += 2;
+  } else {
+    score = 5; // 5 points for an answer within 0.5 octave and 3 dB
+    totalScore += 5;
+  }
+  // exact is kept separately from the point score for the feedback wording
+  // and the exact-answer count in the results report.
+  exact = octErr === 0 && gainErr === 0;
+
+  // Adaptive skill is updated after every scored response. The prediction
+  // stored in c.pred is the expected performance before this response.
+  const normalizedPerformance = score / 5; // Normalize score to a 0-1 range for skill update (this is to compare with the prediction value which is a sigmoid output between 0 and 1)
+  S.skill += K * (normalizedPerformance - c.pred);
+  // Store a flat export row so the researcher can analyse every trial later.
+  S.rows.push({
+    participant_id: P.pid, stage: S.stage, session_number: S.sessionNo, session_id: S.sid, training_group: S.group, session_minutes: S.sessionMinutes, session_trials: S.total,
+    experience: P.state.background.exp || '', headphones: P.state.background.phones || '',
+    trial: S.idx + 1, stimulus: STIMS[c.cfg[0]], stimulus_level: c.cfg[0] + 1, task: TASKS[c.cfg[1]].name, task_level: c.cfg[1] + 1,
+    gain_set: GAINS[c.cfg[2]].label, gain_level: c.cfg[2] + 1, target_hz: FREQS[c.tfi], target_gain_db: c.tg, target_q: TARGET_Q,
+    correct_gain_db: correctGain, response_hz: FREQS[c.ufi], response_gain_db: c.ug, response_q: QS[c.uqi],
+    freq_error_oct: octErr, gain_error_db: gainErr, q_error_oct: +Math.log2(QS[c.uqi] / TARGET_Q).toFixed(3),
+    totalScore, score, exact: exact ? 1 : 0, confidence: c.conf,
+    predicted_p: +c.pred.toFixed(3), skill_before: +c.skillBefore.toFixed(3), skill_after: +S.skill.toFixed(3),
+    first_adjust_ms: c.firstAdj ?? '', total_ms: c.total, adjustments: c.adjustments, monitor_switches: c.switches,
+    ms_question: Math.round(c.monTime.q), ms_answer: Math.round(c.monTime.a), ms_flat: Math.round(c.monTime.f),
+    adjust_path: c.path.join(';'), timestamp: new Date().toISOString()
+  });
+  // Count time spent in the current adaptive cell, then select the next cell.
+  if (S.stage === 'adaptive') {
+    S.atCell++;
+    S.exactStreak = exact ? S.exactStreak + 1 : 0;
+    if (S.exactStreak >= EXACT_STREAK_FOR_TASK) {
+      const atAbsoluteIdentification = S.cell[1] === TASKS.length - 1;
+      if (S.cell[1] < TASKS.length - 1) {
+        S.cell[1]++;
+        S.taskFloor = S.cell[1];
+      }
+      if (atAbsoluteIdentification && S.exactStreak >= EXACT_STREAK_FOR_STIMULUS && S.cell[0] < STIMS.length - 1) {
+        S.cell[0]++;
+        S.cell[1] = 0;
+        S.taskFloor = 0;
+      }
+      S.atCell = 0;
+      S.exactStreak = 0;
+    } else {
+      chooseNext(normalizedPerformance);
+    }
+  }
+  // Save periodically so a browser close does not lose the whole session.
+  if (S.rows.length % 5 === 0) saveState(P.pid, P.state);
+  [...$('confSeg').children].forEach(b => b.disabled = true);
+  $('msg').textContent = '';
+  showFeedback(c, {correctGain, octErr, gainErr, score, exact});
+  syncControls(); renderMonitors(); refreshCurves(); updateGo(); $('goBtn').focus();
+}
+/* ---------- pop-ups ---------- */
+let modalOpen = false;
+// Opens a modal dialog, pauses audio, and wires its buttons.
+function openModal({kicker = '', title, titleClass = '', tone = '', html, buttons}) {
+  // The modal API accepts button descriptors rather than ready-made elements,
+  // which keeps feedback and instructional dialogs consistent.
+  document.querySelector('.modal-card').className = 'modal-card ' + tone;
+  $('modalKicker').textContent = kicker;
+  $('modalTitle').textContent = title; $('modalTitle').className = titleClass;
+  $('modalBody').innerHTML = html;
+  const box = $('modalBtns'); box.innerHTML = '';
+  let primary = null;
+  buttons.forEach(bt => {
+    const b = document.createElement('button'); b.textContent = bt.label; if (bt.primary) { b.className = 'primary'; primary = b; }
+    // Close first by default; keepOpen supports actions that replace the
+    // modal contents without briefly returning to the trial screen.
+    b.addEventListener('click', () => { if (!bt.keepOpen) closeModal(); if (bt.onClick) bt.onClick(); });
+    box.appendChild(b);
+  });
+  $('modal').classList.remove('hidden'); modalOpen = true; holdAudio(true);
+  (primary || box.lastChild).focus();
+}
+// Closes the active modal dialog and resumes audio.
+function closeModal() { $('modal').classList.add('hidden'); modalOpen = false; holdAudio(false); }
+// the stimulus is silent while a pop-up is open, so players can read without noise
+// Mutes or restores the master audio gain while a modal is displayed.
+function holdAudio(on) {
+  if (!master) return;
+  // Schedule the gain change on the audio clock to avoid clicks when a modal
+  // opens or closes.
+  const t = ctx.currentTime; master.gain.cancelScheduledValues(t);
+  if (on) master.gain.setValueAtTime(0, t); else master.gain.setTargetAtTime(+$('vol').value, t, 0.05);
+}
+// Displays a sequence of instructional pages in the modal dialog.
+function showPages(pages, lastLabel, i = 0, skipLabel = '') {
+  const pg = pages[i], last = i === pages.length - 1;
+  // Re-open the same modal with a different page when Next or Back is used.
+  openModal({kicker: `${i + 1} of ${pages.length}`, title: pg.title, html: pg.html, buttons: [
+    ...(skipLabel && !last ? [{label: skipLabel}] : []),
+    ...(i > 0 ? [{label: 'Back', onClick: () => showPages(pages, lastLabel, i - 1, skipLabel)}] : []),
+    {label: last ? lastLabel : 'Next', primary: true, onClick: last ? null : () => showPages(pages, lastLabel, i + 1, skipLabel)}
+  ]});
+}
+// Builds and displays the feedback summary for a completed trial.
+function showFeedback(c, {correctGain, octErr, gainErr, score, exact}) {
+  // Convert numeric errors into participant-friendly messages and a compact
+  // comparison table. c still refers to the trial that was just submitted.
+  const fOk = octErr === 0, gOk = gainErr === 0, flat = c.task === 'flat'; // Sets the flags for correct frequency, gain, and flat task.
+  const notes = [];
+  if (!fOk) notes.push(`Your frequency was ${Math.abs(octErr)} octave${Math.abs(octErr) === 1 ? '' : 's'} too ${octErr > 0 ? 'high' : 'low'}.`);
+  if (!gOk) notes.push(Math.sign(c.ug) !== Math.sign(correctGain) ? `You chose a ${c.ug > 0 ? 'boost' : 'cut'}, but it needed a ${correctGain > 0 ? 'boost' : 'cut'}.` : 'The gain was a different size.');
+  if (flat) notes.push(`To cancel a ${fmtDb(c.tg)} ${c.tg > 0 ? 'boost' : 'cut'}, you need ${fmtDb(correctGain)} at the same frequency.`);
+  const html = `<table class="fbt"><tr><th></th><th>${flat ? 'Correct answer' : 'Question'}</th><th>Your Response</th></tr>
+    <tr><th>Frequency</th><td>${fmtHz(FREQS[c.tfi])}</td><td class="${fOk ? 'good' : 'wrong'}">${fmtHz(FREQS[c.ufi])} ${fOk ? '✓' : '✗'}</td></tr>
+    <tr><th>Gain</th><td>${fmtDb(correctGain)}</td><td class="${gOk ? 'good' : 'wrong'}">${fmtDb(c.ug)} ${gOk ? '✓' : '✗'}</td></tr></table>
+    <p><span class="scoreline ${score === 1 || score === 2 ? 'score-partial' : ''}">Score: ${Math.max(0, score)} points</span></p>${notes.map(n => `<p>${n}</p>`).join('')}
+    <p class="hint">Choose Listen again to compare the Question, Your Response and Bypass before moving on.</p>`;
+  openModal({kicker: TASKS[c.cfg[1]].name, title: exact ? 'Correct!' : 'Not quite', titleClass: exact ? 'ok' : 'bad', tone: exact ? 'ok' : 'bad', html, buttons: [
+    {label: 'Listen again'},
+    {label: S.idx + 1 >= S.total ? 'See results' : 'Next question', primary: true, onClick: go}
+  ]});
+}
+// Advances to the next trial or submits the current response.
+function go() {
+  // The same button is used for Continue, Next question, and Check Answer.
+  // A submitted or sandbox trial advances; an unanswered scored trial submits.
+  if (modalOpen) closeModal();
+  if (S.cur.sandbox || S.cur.submitted) { S.idx++; return S.idx >= S.total ? finish(true) : startTrial(); }
+  submit();
+}
+
+/* ================= home ================= */
+const sessionMinutes = () => SESSION_MINUTES || +($('lenSel') ? $('lenSel').value : 25);
+const sessionTrials = () => (LENGTHS.find(l => l.min === sessionMinutes()) || LENGTHS[1]).trials;
+const STAGE_NAME = {tut: 'Tutorial', adaptive: 'Adaptive training'};
+function trainingShown() {
+  return [TRAINING_GROUP];
+}
+let pendingStage = null;
+function prepareStage(stage) {
+  pendingStage = stage;
+  $('setupBlock').classList.remove('hidden');
+  $('pid').focus();
+  $('setupBlock').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+function renderSteps() {
+  const st = P ? P.state : blankState(), shown = trainingShown(), ready = !!P;
+  const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {day: 'numeric', month: 'short'}) : '';
+  const items = [
+    {key: 'tut', title: 'Tutorial', desc: 'Learn the EQ controls and try each exercise once. About 5 minutes.', done: !!st.tut, status: st.tut ? 'Done ' + fmtDate(st.tut.date) : 'Not started'},
+    ...shown.map(g => ({key: g, title: STAGE_NAME[g], desc: 'Training sessions with feedback. Do as many sessions as your researcher asks, on separate days.',
+      done: st[g].sessions >= 1, status: `${st[g].sessions} session${st[g].sessions === 1 ? '' : 's'} done`, full: false, train: true})),
+  ];
+  const trainDone = st.adaptive.sessions >= 1;
+  const order = ['tut', 'train'], isDone = k => k === 'train' ? trainDone : !!st[k];
+  const nk = ready ? order.find(k => !isDone(k)) : null;
+  const started = shown.filter(g => st[g].sessions > 0 || st[g].trials > 0);
+  const nextKeys = new Set(nk === 'train' ? (started.length ? started : shown) : nk ? [nk] : []);
+  $('steps').innerHTML = items.map((x, k) => `
+    <div class="step ${x.done ? 'done' : ''} ${nextKeys.has(x.key) ? 'next' : ''}">
+      <span class="num">${x.done ? '✓' : k + 1}</span>
+      <div><h3>${x.title}${nextKeys.has(x.key) ? '<span class="badge">Next</span>' : ''}</h3><p>${x.desc}</p><span class="status">${ready ? x.status : ''}</span></div>
+      <button data-stage="${x.key}" ${x.full ? 'disabled' : ''} class="${nextKeys.has(x.key) ? 'primary' : ''}">${x.done && x.key === 'tut' ? 'Repeat' : x.train && x.done ? 'Start another session' : 'Start'}</button>
+    </div>`).join('');
+  $('steps').querySelectorAll('button[data-stage]').forEach(b => b.addEventListener('click', () => startStage(b.dataset.stage)));
+  document.querySelectorAll('.hero-actions button[data-stage]').forEach(b => b.onclick = () => prepareStage(b.dataset.stage));
+  $('progressHint').textContent = ready ? 'Complete the Tutorial, then continue with Adaptive Training.' : 'Enter your participant ID at the top of the page to see your progress.';
+}
+let pidTimer = null;
+async function loadParticipant() {
+  const pid = $('pid').value.trim();
+  if (!pid) { P = null; renderSteps(); return; }
+  try { localStorage.setItem('eqtrainer:lastPid', pid); } catch (e) {}
+  P = {pid, state: localState(pid)};
+  fillBackground(); renderSteps();
+}
+function fillBackground() {
+  if (P.state.sessionMinutes && !SESSION_MINUTES) $('lenSel').value = String(P.state.sessionMinutes);
+  const b = P.state.background || {};
+  if (b.exp) $('exp').value = b.exp;
+  if (b.phones) $('phones').value = b.phones;
+}
+['input', 'change'].forEach(t => $('pid').addEventListener(t, () => { clearTimeout(pidTimer); pidTimer = setTimeout(loadParticipant, 300); }));
+
+function show(id) { ['home', 'trial', 'summary'].forEach(s => $(s).classList.toggle('hidden', s !== id)); document.body.classList.toggle('intrial', id === 'trial'); if (id !== 'trial' && modalOpen) closeModal(); window.scrollTo(0, 0); syncPreview(); }
+
+async function startStage(stage) {
+  const err = $('homeErr'); err.classList.add('hidden');
+  const fail = m => { err.textContent = m; err.classList.remove('hidden'); err.scrollIntoView({block: 'center', behavior: 'smooth'}); };
+  const typed = $('pid').value.trim();
+  if (!typed) { $('pid').focus(); return fail('Enter your participant ID at the top of the page, then press Start again.'); }
+  if (!P || P.pid !== typed) { P = {pid: typed, state: localState(typed)}; }
+  if (!$('exp').value) { $('exp').focus(); return fail('Choose your audio production experience near the top of the page, then press Start again.'); }
+  P.state.background = {exp: $('exp').value, phones: $('phones').value.trim()};
+  P.state.sessionMinutes = sessionMinutes();
+  const btns = $('steps').querySelectorAll('button'); btns.forEach(b => b.disabled = true);
+  try { await ensureAudio(); await prepareStimuli(); }
+  catch (e) { renderSteps(); return fail('Audio couldn’t start in this browser. Try Chrome, Edge, Firefox or Safari.'); }
+  stopTest();
+  const st = P.state, isTrain = stage === 'adaptive';
+  S = { // S is the current session, which is reset at the start of each
+    stage, group: isTrain ? stage : '', sid: `${safeSeg(P.pid)}_${stage}_${Date.now()}`, started: new Date().toISOString(),
+    sessionNo: isTrain ? st[stage].sessions + 1 : 1,
+    total: stage === 'tut' ? TUT.length : sessionTrials(),
+    sessionMinutes: isTrain ? sessionMinutes() : '',
+    idx: 0, rows: [], lastTfi: -1, exactStreak: 0,
+    skill: isTrain ? st[stage].skill : SKILL0,
+    cell: stage === 'adaptive' ? st.adaptive.cell.slice() : [0, 0, 0], atCell: stage === 'adaptive' ? st.adaptive.atCell : 0,
+    taskFloor: stage === 'adaptive' ? st.adaptive.cell[1] : 0,
+  };
+  saveState(P.pid, st);
+  $('stageTxt').textContent = STAGE_NAME[stage];
+  $('sessionTxt').textContent = isTrain ? `Session ${S.sessionNo}, ${S.sessionMinutes} minutes` : '';
+  $('pauseBtn').textContent = 'Pause';
+  spectrumUserVisible = stage !== 'adaptive';
+  show('trial'); startTrial();
+}
+
+async function finish(complete) {
+  stopStim();
+  const st = P.state, n = S.rows.length, date = new Date().toISOString();
+  if (S.stage === 'tut' && complete) st.tut = {date};
+  if (S.stage === 'adaptive') Object.assign(st.adaptive, {skill: S.skill, cell: S.cell, atCell: S.atCell, trials: st.adaptive.trials + n, sessions: st.adaptive.sessions + (complete ? 1 : 0)});
+  show('summary');
+  $('sumTitle').textContent = complete ? `${STAGE_NAME[S.stage]} complete` : `${STAGE_NAME[S.stage]} ended early`;
+  S.complete = complete;
+  saveState(P.pid, st);
+  renderReport();
+  buildEmail();
+  renderSteps();
+}
+
+function renderReport() {
+  const rows = S.rows, n = rows.length, mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0, pts = x => x;
+  const totalScore = rows.reduce((sum, row) => sum + row.score, 0);
+  const stats = n ? [[pts(mean(rows.map(r => r.score))), 'average score'], [pts(totalScore), 'total score'], [`${rows.filter(r => r.exact).length} of ${n}`, 'exact answers'],
+    [(mean(rows.map(r => r.total_ms)) / 1000).toFixed(1) + ' s', 'average time per answer']] : [['0', 'exercises answered']];
+  $('stats').innerHTML = stats.map(([v, k]) => `<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
+  const groups = TASKS.map(t => rows.filter(r => r.task === t.name)).filter(a => a.length);
+  $('byTask').innerHTML = n ? '<tr><th>Exercise</th><th>Answers</th><th>Average score</th><th>Exact</th></tr>' + groups.map(a =>
+    `<tr><td>${a[0].task}</td><td>${a.length}</td><td>${pts(mean(a.map(r => r.score)))}</td><td>${pts(mean(a.map(r => r.exact)))}</td></tr>`).join('') : '';
+  $('lanesBlock').classList.toggle('hidden', !(n && S.stage === 'adaptive'));
+  $('dlMsg').textContent = '';
+  drawLanes();
+}
+function drawLanes() {
+  const cv = $('lanes'); if (!S || !cv.offsetParent || !S.rows.length) return;
+  const rows = S.rows, {g, w, h} = setupCanvas(cv), L = 120, R = 10, B = 34, n = rows.length;
+  const lanes = [['Stimulus type', 'stimulus_level', 4, '1–4'], ['Task', 'task_level', 4, '1–4'], ['Size of change', 'gain_level', 8, '1–8'], ['Score', 'score', 5, '0–5']];
+  const lh = (h - B - 4) / lanes.length, X = i => L + (n === 1 ? (w - L - R) / 2 : i / (n - 1) * (w - L - R));
+  g.clearRect(0, 0, w, h); g.font = '12px "Instrument Sans", system-ui, sans-serif'; g.textBaseline = 'middle';
+  lanes.forEach(([label, key, max, range], li) => {
+    const top = li * lh + 6, bot = top + lh - 10, Y = v => key === 'score' ? bot - v * (bot - top) : bot - (v - 1) / (max - 1) * (bot - top);
+    g.strokeStyle = css('--grid'); g.lineWidth = 1; g.strokeRect(L, top, w - L - R, bot - top);
+    g.fillStyle = css('--ink'); g.textAlign = 'left'; g.font = '600 12px "Instrument Sans", system-ui, sans-serif'; g.fillText(label, 0, (top + bot) / 2 - 7);
+    g.fillStyle = css('--muted'); g.font = '11px "Instrument Sans", system-ui, sans-serif'; g.fillText(`level ${range}, harder ↑`.replace('level 0–1, harder ↑', '0–1, better ↑'), 0, (top + bot) / 2 + 8);
+    g.font = '12px "Instrument Sans", system-ui, sans-serif';
+    if (key === 'score') rows.forEach((r, i) => { g.fillStyle = css(r.exact ? '--ok' : r.score >= 5 ? '--ok' : r.score >= 2 ? '--guess' : '--bad'); g.beginPath(); g.arc(X(i), Y(r.score), 3, 0, 7); g.fill(); });
+    else {
+      g.strokeStyle = css('--accent'); g.lineWidth = 2; g.beginPath();
+      rows.forEach((r, i) => { const y = Y(r[key]); if (!i) g.moveTo(X(i), y); else { g.lineTo(X(i), Y(rows[i - 1][key])); g.lineTo(X(i), y); } });
+      g.stroke();
+    }
+  });
+  // x axis: trial number
+  g.fillStyle = css('--muted'); g.textAlign = 'center'; g.textBaseline = 'top';
+  [...new Set([1, Math.ceil(n / 2), n])].forEach(t => g.fillText(t, X(t - 1), h - B + 2));
+  g.fillStyle = css('--ink'); g.font = '600 12px "Instrument Sans", system-ui, sans-serif'; g.textBaseline = 'bottom';
+  g.fillText('Trial number', L + (w - L - R) / 2, h - 1);
+}
+function toCSV(rows) {
+  if (!rows.length) return '';
+  const cols = Object.keys(rows[0]), esc = v => { v = String(v ?? ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return [cols.join(','), ...rows.map(r => cols.map(c => esc(r[c])).join(','))].join('\n') + '\n';
+}
+const fileName = () => `eqtraining_${safeSeg(P.pid)}_${S.stage}${S.group ? '_s' + S.sessionNo : ''}_${new Date().toISOString().slice(0, 10)}.csv`;
+function buildEmail() {
+  $('emailTo').textContent = RESEARCH_EMAIL;
+  $('fileName').textContent = fileName();
+  $('csv').value = toCSV(S.rows);
+}
+function download() {
+  const data = toCSV(S.rows), m = $('dlMsg'); if (!data) { m.textContent = 'There’s no data to save.'; return; }
+  const name = fileName();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], {type: 'text/csv'})); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); m.textContent = 'Saved. Now attach it to an email to ' + RESEARCH_EMAIL + '.';
+}
+
+/* ================= wiring ================= */
+let testing = false;
+function stopTest() { if (testing) { stopStim(); testing = false; $('testBtn').textContent = 'Play test sound'; } }
+$('testBtn').addEventListener('click', async () => {
+  if (testing) { stopTest(); syncPreview(); return; }
+  $('testBtn').disabled = true; $('testBtn').textContent = 'Preparing…';
+  try { await ensureAudio(); if (!stimBufs[3]) stimBufs[3] = await renderStim(3); }
+  catch (e) { $('testBtn').disabled = false; $('testBtn').textContent = 'Play test sound'; return; }
+  $('testBtn').disabled = false;
+  qG.gain.value = 0; aG.gain.value = 0; rG.gain.value = 0; fG.gain.value = 1;
+  setStim(3); testing = true; $('testBtn').textContent = 'Stop test sound'; syncPreview();
+});
+function setVol(v) { $('vol').value = v; $('vol2').value = v; if (master && !modalOpen) master.gain.setTargetAtTime(+v, ctx.currentTime, 0.02); }
+$('vol').addEventListener('input', e => setVol(e.target.value));
+$('vol2').addEventListener('input', e => setVol(e.target.value));
+['mQ', 'mA', 'mF'].forEach(id => $(id).addEventListener('click', () => setMon($(id).dataset.m)));
+$('freqSl').addEventListener('input', e => userAdjust({fi: +e.target.value}));
+$('gainSl').addEventListener('input', e => userAdjust({gain: S.cur.gopts[+e.target.value]}));
+$('goBtn').addEventListener('click', go);
+$('helpBtn').addEventListener('click', () => openModal({title: 'How to play', html: HELP_HTML, buttons: [{label: 'Got it', primary: true}]}));
+$('pauseBtn').addEventListener('click', async () => {
+  if (ctx.state === 'running') { await ctx.suspend(); $('pauseBtn').textContent = 'Resume'; }
+  else { await ctx.resume(); $('pauseBtn').textContent = 'Pause'; }
+});
+//Controls the spectrum visualizer on or off
+const spectrumToggle = $('SpectrumToggle');
+const visualizer = $('visualizer');
+let spectrumUserVisible = true;
+spectrumToggle.addEventListener('click', () => {
+  spectrumUserVisible = !spectrumUserVisible;
+  syncSpectrumForMonitor(mon);
+});
+syncSpectrumForMonitor(mon);
+$('endBtn').addEventListener('click', async () => { if (ctx.state === 'suspended') await ctx.resume(); finish(false); });
+$('homeBtn').addEventListener('click', () => { show('home'); renderSteps(); });
+$('dlBtn').addEventListener('click', download);
+$('copyBtn').addEventListener('click', async () => {
+  const t = $('csv');
+  try { await navigator.clipboard.writeText(t.value); $('dlMsg').textContent = 'Copied.'; }
+  catch (e) { t.focus(); t.select(); $('dlMsg').textContent = 'Text selected. Press Ctrl+C or Cmd+C to copy.'; }
+});
+document.addEventListener('keydown', e => {
+  if (modalOpen) {
+    if (e.key === 'Enter') { e.preventDefault(); const p = $('modalBtns').querySelector('.primary'); if (p) p.click(); }
+    return;
+  }
+  if ($('trial').classList.contains('hidden') || !S || !S.cur) return;
+  if (e.target.matches('input[type=text],textarea,select')) return;
+  if (e.target.matches('input[type=range]') && e.key.startsWith('Arrow')) return;
+  const k = e.key.toLowerCase(), c = S.cur;
+  // keyboard shortcuts follow Corey (2016, p. 48)
+  if (k === 'q') setMon('f'); else if (k === 'w') setMon('q'); else if (k === 'e') setMon('a');
+  else if (k === ' ') {
+    e.preventDefault();
+    const pair = c.sandbox ? ['a', 'f'] : c.submitted ? ['q', 'a'] : {match: ['q', 'a'], memory: c.locked ? ['f', 'a'] : ['q', 'a'], flat: ['a', 'f'], absolute: ['q', 'f']}[c.task];
+    setMon(mon === pair[0] ? pair[1] : pair[0]);
+  }
+  else if (/^[1-9]$/.test(k) && !c.submitted) userAdjust({fi: +k - 1});
+  else if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(k) && !c.submitted) {
+    e.preventDefault();
+    // Changed the key mapping here to make it correspond with the eq logic: LEFT/RIGHT: change Freq; UP/DOWN: change Gain
+    if (k === 'arrowright' || k === 'arrowleft') userAdjust({fi: Math.max(0, Math.min(FREQS.length - 1, c.ufi + (k === 'arrowright' ? 1 : -1)))});
+    else { const gi = Math.max(0, Math.min(c.gopts.length - 1, c.gopts.indexOf(c.ug) + (k === 'arrowup' ? 1 : -1))); userAdjust({gain: c.gopts[gi]}); }
+  } else if (e.key === 'Enter' && !$('goBtn').disabled && e.target.tagName !== 'BUTTON') { e.preventDefault(); go(); }
+});
+window.addEventListener('hashchange', renderSteps);
+const redraw = () => { drawPlot(); drawLanes(); };
+new ResizeObserver(redraw).observe(document.body);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw);
+new MutationObserver(redraw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+
+/* ================= home preview: moving EQ over the full mix ================= */
+// The preview has its own audio chain (source, EQ, level match, mute) that ends in the shared master gain,
+// so the volume slider and the analyser keep working. It plays only while the Home screen is visible.
+const PV_DEMO = [[250, 9], [2000, -9], [63, 6], [4000, 12], [500, -12], [8000, 9], [125, -6], [1000, 12], [16000, -9], [2000, 9]];
+const PV_HOLD = 1000, PV_GLIDE = 2400;
+const pvCv = $('pvCanvas'), pvG = pvCv.getContext('2d'), pvReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+const pvCol = {}, pM = new Float32Array(NF), pY = new Float32Array(NF);
+let pvRaf = 0, pvLast = 0, pvClock = 0, pvTxt = 0, pvFrames = 0, pvMuted = false, pvArmed = false;
+let pAudio = null, pStarting = false, pEQ = null, pGain = null, pMute = null, pvSilent = null, pvAsk = null;
+const homeVisible = () => !$('home').classList.contains('hidden');
+const pvWantsVisuals = () => homeVisible() && !document.hidden;
+const pvWantsAudio = () => pvWantsVisuals() && !testing;
+
+function pvColors() { ['--accent', '--ok', '--bad', '--guess', '--muted', '--grid', '--line', '--panel', '--ink'].forEach(k => pvCol[k] = css(k)); }
+const pvA = (c, a) => /^#[0-9a-f]{6}$/i.test(c) ? c + Math.round(a * 255).toString(16).padStart(2, '0') : c;
+
+// Where the demo EQ is at time t: hold on a setting, then glide (eased, in log-frequency) to the next one.
+function pvState(t) {
+  const seg = PV_HOLD + PV_GLIDE, n = PV_DEMO.length, k = Math.floor(t / seg), ph = t - k * seg;
+  const a = PV_DEMO[k % n], b = PV_DEMO[(k + 1) % n];
+  const x = ph < PV_HOLD ? 0 : (ph - PV_HOLD) / PV_GLIDE, u = 0.5 - 0.5 * Math.cos(Math.PI * x);
+  return {f: Math.exp(Math.log(a[0]) + (Math.log(b[0]) - Math.log(a[0])) * u), g: a[1] + (b[1] - a[1]) * u};
+}
+// Magnitude response of a peaking biquad (same formulas as the Web Audio filter), so the curve can be drawn before audio exists.
+function pvResponse(f, gDb, q, fs, out) {
+  const A = Math.pow(10, gDb / 40), w0 = 2 * Math.PI * f / fs, c0 = Math.cos(w0), al = Math.sin(w0) / (2 * q);
+  const b0 = 1 + al * A, b1 = -2 * c0, b2 = 1 - al * A, a0 = 1 + al / A, a1 = b1, a2 = 1 - al / A;
+  for (let i = 0; i < NF; i++) {
+    const w = 2 * Math.PI * freqs[i] / fs, c1 = Math.cos(w), s1 = Math.sin(w), c2 = Math.cos(2 * w), s2 = Math.sin(2 * w);
+    const nr = b0 + b1 * c1 + b2 * c2, ni = -(b1 * s1 + b2 * s2), dr = a0 + a1 * c1 + a2 * c2, di = -(a1 * s1 + a2 * s2);
+    out[i] = Math.sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
+  }
+}
+
+function pvDraw(st) {
+  const rect = pvCv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, w = rect.width, h = rect.height;
+  if (!w || !h) return;
+  if (pvCv.width !== Math.round(w * dpr) || pvCv.height !== Math.round(h * dpr)) { pvCv.width = Math.round(w * dpr); pvCv.height = Math.round(h * dpr); }
+  const g = pvG, c = pvCol; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const padL = w < 520 ? 34 : 46, padR = 14, top = 14, bot = h - 28, pw = w - padL - padR;
+  const X = f => padL + xFrac(f) * pw, Y = db => top + (DBR - db) / (2 * DBR) * (bot - top), y0 = Y(0);
+  g.font = '11.5px "Instrument Sans", system-ui, sans-serif'; g.lineWidth = 1;
+  // grid
+  g.strokeStyle = c['--grid']; g.fillStyle = c['--muted']; g.textAlign = 'center'; g.textBaseline = 'top';
+  FREQS.forEach((f, i) => { g.beginPath(); g.moveTo(X(f), top); g.lineTo(X(f), bot); g.stroke(); if (w >= 520 || i % 2 === 0) g.fillText(f >= 1000 ? f / 1000 + 'k' : f, X(f), bot + 8); });
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  [-12, -6, 0, 6, 12].forEach(db => {
+    g.strokeStyle = db === 0 ? c['--line'] : c['--grid']; g.lineWidth = db === 0 ? 1.5 : 1;
+    g.beginPath(); g.moveTo(padL, Y(db)); g.lineTo(padL + pw, Y(db)); g.stroke();
+    g.fillStyle = c['--muted']; g.fillText((db > 0 ? '+' : db < 0 ? '−' : '') + Math.abs(db), padL - 8, Y(db));
+  });
+  // EQ curve: tinted area (green boost / red cut) plus a glowing line
+  for (let i = 0; i < NF; i++) pY[i] = Y(Math.max(-DBR, Math.min(DBR, 20 * Math.log10(pM[i]))));
+  const trace = () => { g.beginPath(); for (let i = 0; i < NF; i++) { const x = padL + i / (NF - 1) * pw; i ? g.lineTo(x, pY[i]) : g.moveTo(x, pY[i]); } };
+  trace(); g.lineTo(padL + pw, y0); g.lineTo(padL, y0); g.closePath();
+  g.fillStyle = pvA(st.g >= 0 ? c['--ok'] : c['--bad'], 0.06 + 0.22 * Math.min(1, Math.abs(st.g) / 12)); g.fill();
+  if (!pvReduce.matches) { g.shadowColor = pvA(c['--accent'], 0.55); g.shadowBlur = 12; }
+  trace(); g.strokeStyle = c['--accent']; g.lineWidth = 3; g.lineJoin = 'round'; g.stroke(); g.shadowBlur = 0;
+  // the node, like the draggable dot in the exercises
+  const nx = X(st.f), ny = Y(st.g);
+  g.setLineDash([4, 4]); g.strokeStyle = pvA(c['--guess'], 0.7); g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(nx, ny); g.lineTo(nx, y0); g.stroke(); g.setLineDash([]);
+  if (!pvReduce.matches) {
+    const ph = (pvClock % 1600) / 1600; g.globalAlpha = 0.45 * (1 - ph); g.strokeStyle = c['--guess']; g.lineWidth = 2;
+    g.beginPath(); g.arc(nx, ny, 9 + 14 * ph, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
+  }
+  g.fillStyle = c['--guess']; g.strokeStyle = c['--panel']; g.lineWidth = 2.5;
+  g.beginPath(); g.arc(nx, ny, 9, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.textAlign = 'right'; g.font = '12px "Instrument Sans", system-ui, sans-serif';
+  g.fillStyle = c['--ok']; g.textBaseline = 'top'; g.fillText('▲ Boost', padL + pw - 6, top + 4);
+  g.fillStyle = c['--bad']; g.textBaseline = 'bottom'; g.fillText('▼ Cut', padL + pw - 6, bot - 4);
+}
+
+function pvFrame(ts) {
+  pvRaf = requestAnimationFrame(pvFrame);
+  pvClock += pvLast ? Math.min(100, ts - pvLast) : 16; pvLast = ts;
+  if (pvFrames++ % 45 === 0) pvColors();
+  const st = pvState(pvClock), fs = ctx ? ctx.sampleRate : 48000;
+  pvResponse(st.f, st.g, TARGET_Q, fs, pM);
+  if (pEQ) {
+    // Level-match like the exercises do, so a +12 dB boost is not simply louder.
+    const comp = compOf(pM);
+    if (ctx.state === 'running') {
+      const now = ctx.currentTime;
+      pEQ.frequency.setTargetAtTime(st.f, now, 0.03); pEQ.gain.setTargetAtTime(st.g, now, 0.03); pGain.gain.setTargetAtTime(comp, now, 0.05);
+    } else { pEQ.frequency.value = st.f; pEQ.gain.value = st.g; pGain.gain.value = comp; }
+  }
+  pvDraw(st);
+  if (ts - pvTxt > 90) {
+    pvTxt = ts;
+    $('pvFreq').textContent = st.f >= 1000 ? (st.f / 1000).toFixed(1) + ' kHz' : Math.round(st.f) + ' Hz';
+    const gg = Math.round(st.g * 10) / 10;
+    $('pvGain').textContent = (gg > 0 ? '+' : gg < 0 ? '−' : '') + Math.abs(gg).toFixed(1) + ' dB';
+    $('pvGainChip').className = 'pv-chip' + (gg >= 0.5 ? ' boost' : gg <= -0.5 ? ' cut' : '');
+  }
+  const silent = pvMuted || !(ctx && ctx.state === 'running' && pAudio);
+  if (silent !== pvSilent) { pvSilent = silent; $('preview').classList.toggle('is-silent', silent); }
+  // Browsers may block sound until the first click, tap or key press: show a hint, then start on that first gesture.
+  const ask = !!pAudio && !!ctx && ctx.state !== 'running' && !pvMuted && pvClock > 700;
+  if (ask !== pvAsk) { pvAsk = ask; $('pvUnlock').classList.toggle('hidden', !ask); }
+}
+
+function buildPreviewGraph() {
+  pEQ = ctx.createBiquadFilter(); pEQ.type = 'peaking'; pEQ.Q.value = TARGET_Q; pEQ.frequency.value = PV_DEMO[0][0]; pEQ.gain.value = PV_DEMO[0][1];
+  pGain = ctx.createGain(); pMute = ctx.createGain(); pMute.gain.value = pvMuted ? 0 : 1;
+  pEQ.connect(pGain); pGain.connect(pMute); pMute.connect(master);
+}
+async function startPreviewAudio() {
+  if (pAudio || pStarting) return;
+  pStarting = true;
+  try {
+    if (!ctx) await ensureAudio();                 // creates the audio context; it may start suspended until a gesture
+    if (!stimBufs[3]) stimBufs[3] = await renderStim(3);   // the 'Full mix' stimulus
+    if (!pvWantsAudio() || pAudio) return;         // the screen may have changed while the mix was rendering
+    if (!pEQ) buildPreviewGraph();
+    const t = ctx.currentTime, s = ctx.createBufferSource(), fade = ctx.createGain();
+    s.buffer = stimBufs[3]; s.loop = true;
+    fade.gain.setValueAtTime(0, t); fade.gain.linearRampToValueAtTime(1, t + 0.9);
+    s.connect(fade); fade.connect(pEQ); s.start(t);
+    pAudio = {s, fade};
+    if (ctx.state !== 'running') { ctx.resume().catch(() => {}); pvArm(); }
+  } catch (e) { /* the animation still works without sound */ }
+  finally { pStarting = false; }
+}
+function stopPreviewAudio() {
+  if (!pAudio) return;
+  const {s, fade} = pAudio; pAudio = null;
+  try { const t = ctx.currentTime; fade.gain.cancelScheduledValues(t); fade.gain.setTargetAtTime(0, t, 0.015); s.stop(t + 0.1); } catch (e) {}
+  setTimeout(() => { try { s.disconnect(); fade.disconnect(); } catch (e) {} }, 300);
+}
+// One-shot unlock: the first gesture on the Home screen resumes a context the browser kept suspended.
+const pvEvents = ['pointerup', 'touchend', 'click', 'keydown'];
+function pvUnlock() {
+  if (!ctx || ctx.state === 'running') return pvDisarm();
+  if (!homeVisible()) return;                       // never touch the context during an exercise (Pause/Resume is the trial's own)
+  ctx.resume().then(() => { if (ctx.state === 'running') pvDisarm(); }).catch(() => {});
+}
+function pvArm() { if (pvArmed) return; pvArmed = true; pvEvents.forEach(t => window.addEventListener(t, pvUnlock, true)); }
+function pvDisarm() { pvArmed = false; pvEvents.forEach(t => window.removeEventListener(t, pvUnlock, true)); }
+
+function syncPreview() {
+  if (pvWantsVisuals()) { if (!pvRaf) { pvLast = 0; pvRaf = requestAnimationFrame(pvFrame); } }
+  else if (pvRaf) { cancelAnimationFrame(pvRaf); pvRaf = 0; }
+  if (pvWantsAudio()) startPreviewAudio(); else stopPreviewAudio();
+}
+$('pvMute').addEventListener('click', () => {
+  pvMuted = !pvMuted; $('pvMute').setAttribute('aria-pressed', String(pvMuted));
+  if (pMute) pMute.gain.setTargetAtTime(pvMuted ? 0 : 1, ctx.currentTime, 0.03);
+});
+$('pvUnlock').addEventListener('click', () => { if (ctx) ctx.resume().catch(() => {}); });
+document.addEventListener('visibilitychange', syncPreview);
+pvColors();
+syncPreview();   // start the preview as soon as the page has loaded
+
+buildStatic();
+if (SESSION_MINUTES) $('lenRow').classList.add('hidden');
+try { const last = localStorage.getItem('eqtrainer:lastPid'); if (last) $('pid').value = last; } catch (e) {}
+renderSteps();
+if ($('pid').value.trim()) loadParticipant();
+})();
+</script>
+
+<!-- This script draws the live audio spectrum on the visualiser canvas. --> 
+<!-- Original file called eq-visualiser.js -->
+<script>
+  (() => {
+  'use strict';
+
+  const FMIN = 20;
+  const FMAX = 20000;
+  const PAD_L = 62;
+  const PAD_R = 24;
+  const canvases = [...document.querySelectorAll('#visualizer, #pvVisualizer')];
+  if (!canvases.length) return;
+  const analysers = new WeakMap();
+
+  // create an array of HSL colours  with increasing angles:
+  const colors = Array.from({ length: 251 }, (_, i) =>
+  `hsl(${i}, 100%, 50%)`
+  );
+
+  function resize(canvas, context) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+/*  // Linear interpolation function; could be used for creating gradient with HSL:
+  function lerp(index, rangeIn, rangeOut) {
+    return (index - rangeIn[0]) * (rangeOut[1] - rangeOut[0]) / (rangeIn[1] - rangeIn[0] + rangeOut[0]);
+  }*/
+
+  function draw(canvas, context) {
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+      resize(canvas, context);
+    }
+
+    context.clearRect(0, 0, width, height);
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(0, 0, width, height);
+
+    // The audio context is created only after the participant starts a session.
+    // Look it up on every frame so the visualiser starts automatically at that point.
+    const analyser = window.eqTrainerVisuals?.getAnalyser() || analysers.get(canvas) || null;
+    if (analyser) analysers.set(canvas, analyser);
+    if (analyser) {
+      const values = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(values);
+      const plotWidth = width - PAD_L - PAD_R;
+      const binHz = analyser.context.sampleRate / analyser.fftSize;
+      const logRange = Math.log(FMAX / FMIN);
+
+      const gradient = context.createLinearGradient(PAD_L, 0, width - PAD_R, 0);
+      //Two approaches:
+      
+/*    // Gradient from hard-coded colours:
+      gradient.addColorStop(0,  'crimson');
+      gradient.addColorStop(0.1,'red');
+      gradient.addColorStop(0.2,'orange');
+      gradient.addColorStop(0.3,'gold');
+      gradient.addColorStop(0.4,'yellow');
+      gradient.addColorStop(0.5,'greenYellow');
+      gradient.addColorStop(0.6,'springGreen');
+      gradient.addColorStop(0.7,'turquoise');
+      gradient.addColorStop(0.8,'deepSkyBlue');
+      gradient.addColorStop(0.9,'dodgerBlue');
+      gradient.addColorStop(1,  'midnightBlue');*/
+
+      // Gradient from an array of HSL colours:
+      for (let i = 0; i < colors.length; i++) {
+        const position = i / (colors.length - 1);
+        gradient.addColorStop(position, colors[i]);
+      }
+
+      context.strokeStyle = gradient;
+      context.lineWidth = 3;
+      context.lineJoin = 'round';
+      context.lineCap = 'round';
+      context.beginPath();
+
+      let started = false;
+      for (let i = 0; i < values.length; i++) {
+        const frequency = i * binHz;
+        if (frequency < FMIN) continue;
+        if (frequency > FMAX) break;
+        const x = PAD_L + Math.log(frequency / FMIN) / logRange * plotWidth;
+        const level = values[i] / 255;
+        const y = height - level * height * 0.8;
+        if (!started) {
+          context.moveTo(x, y);
+          started = true;
+        } else {
+          context.lineTo(x, y);
+        }
+      }
+
+      if (started) context.stroke();
+    } else {
+      context.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#5D6878';
+      context.font = '12px "Instrument Sans", system-ui, sans-serif';
+      context.fillText('Start a trial and play a sound to see the spectrum', PAD_L, height - 8);
+    }
+
+    requestAnimationFrame(() => draw(canvas, context));
+  }
+
+  function connect(canvas, context) {
+    const analyser = window.eqTrainerVisuals?.getAnalyser() || null;
+    if (analyser) analysers.set(canvas, analyser);
+    resize(canvas, context);
+    draw(canvas, context);
+  }
+
+  canvases.forEach(canvas => {
+    const context = canvas.getContext('2d');
+    window.addEventListener('resize', () => resize(canvas, context));
+    const panel = canvas.parentElement;
+    if (panel && 'ResizeObserver' in window) new ResizeObserver(() => resize(canvas, context)).observe(panel);
+    if (document.fonts) document.fonts.ready.then(() => connect(canvas, context));
+    else connect(canvas, context);
+  });
+})();
+</script>
+</body>
+</html>
