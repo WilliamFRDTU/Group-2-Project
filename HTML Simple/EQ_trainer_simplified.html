@@ -246,6 +246,7 @@ button.link{background:none;border:0;padding:0;color:var(--accent);text-decorati
 </style>
 </head>
 <body>
+<audio id="drumAudio" src="./Audio/justbearound_drums.mp3" preload="auto" loop hidden></audio>
 <!-- main contains the complete visible application. JavaScript switches between its screens. -->
 <main>
   <!-- HOME: participant details, audio level check and available sessions. -->
@@ -492,7 +493,7 @@ function localState(pid) { return Object.assign(blankState(), readLocal(pid) || 
 function saveState(pid, st) { st.updated = Date.now(); writeLocal(pid, st); }
 
 /* ================= audio ================= */
-let ctx, src, tgt, usr, usr2, probe, qG, aG, fG, rG, master, audioAnalyser;
+let ctx, src, drumSource, tgt, usr, usr2, probe, qG, aG, fG, rG, master, audioAnalyser;
 const stimBufs = [null, null, null, null];
 let curStim = -1, mon = 'q', comps = {q: 1, a: 1, r: 1};
 
@@ -596,17 +597,55 @@ async function renderStim(level) {
   }
   return normalise(await oc.startRendering(), 0.1);
 }
+
+// Real music loaded by the HTML <audio> element.
+async function loadAudio(audio) {
+  if (audio.readyState >= 2) return audio;
+  return await new Promise((resolve, reject) => {
+    const onReady = () => {
+      audio.removeEventListener('canplay', onReady);
+      audio.removeEventListener('error', onError);
+      resolve(audio);
+    };
+    const onError = () => {
+      audio.removeEventListener('canplay', onReady);
+      audio.removeEventListener('error', onError);
+      reject(new Error('Could not load ' + audio.currentSrc));
+    };
+    audio.addEventListener('canplay', onReady, {once: true});
+    audio.addEventListener('error', onError, {once: true});
+    audio.load();
+  });
+}
+
 async function prepareStimuli() {
   if (!stimBufs[0]) stimBufs[0] = makePink();
-  for (let i = 1; i < 4; i++) if (!stimBufs[i]) stimBufs[i] = await renderStim(i);
+  if (!stimBufs[1]) stimBufs[1] = await loadAudio($('drumAudio'));
+  for (let i = 2; i < 4; i++) if (!stimBufs[i]) stimBufs[i] = await renderStim(i);
 }
 function setStim(i) {
-  if (curStim === i && src) return;
+  if (curStim === i && (src || (i === 1 && stimBufs[1] && !stimBufs[1].paused))) return;
   stopStim();
-  src = ctx.createBufferSource(); src.buffer = stimBufs[i]; src.loop = true;
-  src.connect(tgt); src.connect(usr); src.connect(fG); src.start(); curStim = i;
+  if (i === 1) {
+    const audio = stimBufs[i];
+    if (!drumSource) drumSource = ctx.createMediaElementSource(audio);
+    drumSource.connect(tgt); drumSource.connect(usr); drumSource.connect(fG);
+    audio.loop = true;
+    audio.currentTime = 0;
+    audio.play().catch(e => console.error('Could not play drum audio:', e));
+  } else {
+    src = ctx.createBufferSource(); src.buffer = stimBufs[i]; src.loop = true;
+    src.connect(tgt); src.connect(usr); src.connect(fG); src.start();
+  }
+  curStim = i;
 }
-function stopStim() { if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; } curStim = -1; }
+function stopStim() {
+  if (src) { try { src.stop(); } catch (e) {} src.disconnect(); src = null; }
+  if (drumSource) drumSource.disconnect();
+  const audio = $('drumAudio');
+  if (audio) { audio.pause(); audio.currentTime = 0; }
+  curStim = -1;
+}
 
 function resp(f, g, q) {
   probe.frequency.value = f; probe.gain.value = g; probe.Q.value = q;
@@ -1162,7 +1201,13 @@ async function startStage(stage) {
   P.state.sessionMinutes = sessionMinutes();
   const btns = $('steps').querySelectorAll('button'); btns.forEach(b => b.disabled = true);
   try { await ensureAudio(); await prepareStimuli(); }
-  catch (e) { renderSteps(); return fail('Audio couldn’t start in this browser. Try Chrome, Edge, Firefox or Safari.'); }
+  catch (e) {
+    console.error('Audio preparation failed:', e);
+    renderSteps();
+    const detail = e && e.message ? e.message : String(e);
+    const locationHint = location.protocol === 'file:' ? ' Open the page through a local web server instead of a file:// URL.' : '';
+    return fail(`Audio couldn’t start: ${detail}.${locationHint}`);
+  }
   stopTest();
   const st = P.state, isTrain = stage === 'adaptive';
   S = { // S is the current session, which is reset at the start of each
