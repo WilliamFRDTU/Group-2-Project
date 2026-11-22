@@ -1057,6 +1057,28 @@ button.primary:disabled{box-shadow:none}
 .score-guide tr.you td:first-child{border-radius:8px 0 0 8px} .score-guide tr.you td:last-child{border-radius:0 8px 8px 0}
 .you-tag{margin-left:6px;font-size:.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
 #skillSpark{display:none}   /* the score history line is hidden: the level, its bar and the up/down message say enough */
+
+/* v39: "Level 4 · Skill score 37" in the header chip, and the skill score line on the results card */
+.score-chip .chip-sep{order:2;color:var(--muted)}
+.score-chip-k2{order:2;font-size:.9rem;font-weight:500;color:var(--ink)}
+.score-chip #tSkillVal{order:2;font-size:1rem;font-weight:700}
+.skill-line{margin-top:8px;font-weight:600;color:var(--muted);display:inline-flex;align-items:center;gap:8px}
+.skill-line b{color:var(--ink);font-size:1.1rem}
+.score-chip,.qh-btn,.score-chip *{white-space:nowrap}
+.score-chip{gap:6px;padding:9px 14px}
+.score-chip-k{gap:6px}
+
+/* v39b: the header chip is two compact lines (Level / Skill score) with the bar underneath, so it stays narrow
+   and the task title stays centred even for the longest titles */
+.score-chip{display:inline-grid;grid-template-columns:auto;justify-items:start;gap:1px;padding:6px 14px 7px;line-height:1.2;border-radius:16px}
+.chip-l1{display:inline-flex;align-items:center;gap:5px;font-size:.9rem;font-weight:500;color:var(--ink)}
+.chip-l1 .icon{width:14px;height:14px;color:var(--muted)}
+.chip-l1 b{font-size:1rem;font-weight:700}
+.chip-l2{font-size:.76rem;color:var(--muted);font-weight:500}
+.chip-l2 b{color:var(--ink);font-weight:700}
+.score-chip .lvl-bar{width:100%;height:3px;margin-top:3px}
+.score-chip:hover .chip-l1 .icon{color:var(--accent)}
+.score-chip.bump .chip-l1 b{animation:scoreBump .6s ease;display:inline-block}
 </style>
 </head>
 <body>
@@ -1194,7 +1216,9 @@ button.primary:disabled{box-shadow:none}
       <div class="thead-r">
         <!-- Level: click to open the Points and levels pop-up. Training: the bar fills as you do well. Tutorial: the saved level (not scored). -->
         <button id="tScore" class="score-chip" data-help-title="Level" data-help="Your level, from 1 to 10. Do well and you move up; if you struggle, the questions get easier. Click to see the levels.">
-          <span class="score-chip-k">Level <span data-icon="info"></span></span><b id="tScoreVal">—</b><span class="lvl-bar" aria-hidden="true"><i id="tLvlBar"></i></span>
+          <span class="chip-l1"><span data-icon="info"></span>Level <b id="tScoreVal">—</b></span>
+          <span class="chip-l2">Skill score <b id="tSkillVal">—</b></span>
+          <span class="lvl-bar" aria-hidden="true"><i id="tLvlBar"></i></span>
         </button>
         <button id="qhBtn" class="btn-ic qh-btn" aria-pressed="false" data-help-title="Quick help" data-help="Turn Quick help on or off. While it is on, hover over anything to see what it does. Shortcut: ?"><span data-icon="help"></span>Quick help</button>
       </div>
@@ -1259,12 +1283,12 @@ button.primary:disabled{box-shadow:none}
         <div class="side" id="setSide" aria-label="EQ settings">
           <h3>EQ settings</h3>
           <div class="vsliders">
-            <div class="vknob" data-help-title="Frequency" data-help="Where the EQ acts, in hertz: low = weight and rumble, middle = body, high = brightness and air. Moves in octave steps, as in Corey’s trainer.">
+            <div class="vknob" data-help-title="Frequency" data-help="Where the EQ acts, in hertz: low = weight and rumble, middle = body, high = brightness and air. Moves in octave steps: the nine bands the tasks use.">
               <label for="freqSl">Freq</label><input id="freqSl" class="vrange" type="range" min="0" max="8" step="1"><output id="fOut"></output></div>
             <div class="vknob" data-help-title="Gain" data-help="How much the frequency is turned up (boost) or down (cut), in dB. When a task has only one possible gain it is set for you.">
               <label for="gainSl">Gain</label><input id="gainSl" class="vrange" type="range" min="0" max="2" step="1"><output id="gOut"></output></div>
-            <div class="vknob" data-help-title="Q" data-help="How wide the EQ change is. Fixed at 2 for this training, as in Corey’s trainer, so you only need to find frequency and gain.">
-              <label for="qSl">Q</label><input id="qSl" class="vrange" type="range" min="0" max="6" step="1" disabled><output id="qOut"></output></div>
+            <div class="vknob" data-help-title="Q" data-help="How wide the EQ change is: a low Q affects a wide range of frequencies, a high Q a narrow one. You can change it in Free EQ; in the tasks it is fixed at 2, so you only need to find frequency and gain.">
+              <label for="qSl">Q</label><input id="qSl" class="vrange" type="range" min="0" max="6" step="1"><output id="qOut"></output></div>
           </div>
         </div>
       </div>
@@ -1346,6 +1370,7 @@ button.primary:disabled{box-shadow:none}
         <span class="v" id="skillVal">1</span>
         <span class="lvl-name" id="skillName"></span>
         <span class="lvl-bar lg" aria-hidden="true"><i id="skillBar"></i></span>
+        <span class="skill-line">Skill score <b id="skillScoreVal">0</b> <span class="delta hidden" id="skillDelta"></span></span>
       </div>
       <svg id="skillSpark" class="spark spark-lg" viewBox="0 0 240 60" aria-hidden="true"></svg>
       <div class="skill-side">
@@ -1416,7 +1441,7 @@ const INSTR = {
 };
 // What each sound is: used by Quick help on the tutorial's sound list and by the unlock card.
 const STIM_HELP = [
-  'Equal energy in every octave, so a change at any frequency is equally easy to hear. Corey’s recommended starting point.',
+  'Equal energy in every octave, so a change at any frequency is equally easy to hear. The best sound to start with.',
   'A drum kit: kick, snare and hi-hats. Real music, with gaps between the hits.',
   'Drums plus a bass line, so the low frequencies are busier.',
   'Drums, bass, chords and melody together: closest to a real mix, and the hardest to hear changes in.'
@@ -1849,7 +1874,7 @@ function syncControls() {
   $('gOut').textContent = c.ug == null ? 'not set' : fmtDb(c.ug);
   $('qSl').value = c.uqi; $('qOut').textContent = QS[c.uqi].toFixed(1);
   const lock = c.submitted || c.pending;
-  $('freqSl').disabled = lock; $('qSl').disabled = true; $('gainSl').disabled = lock || c.gopts.length < 2;
+  $('freqSl').disabled = lock; $('qSl').disabled = lock || !c.sandbox;   // Q can only be changed in Free EQ $('gainSl').disabled = lock || c.gopts.length < 2;
   $('plot').classList.toggle('locked', lock);
 }
 // Shows a short message in the middle of the bottom bar. tone: '', 'info', 'ok' or 'bad'.
@@ -2223,10 +2248,11 @@ function renderTutLists() {
 
 /* ---------- adjusting and answering ---------- */
 // Applies a frequency or gain change to Your EQ.
-function userAdjust({fi, gain}) {
+function userAdjust({fi, gain, qi}) {
   const c = S.cur; if (c.submitted || c.pending) return;
-  const nf = fi ?? c.ufi, ng = gain ?? c.ug, nq = TARGET_QI; // Q is locked at 2
-  if (nf === c.ufi && ng === c.ug) return;
+  // Q is free in Free EQ and locked at 2 in every task.
+  const nf = fi ?? c.ufi, ng = gain ?? c.ug, nq = c.sandbox ? (qi ?? c.uqi) : TARGET_QI;
+  if (nf === c.ufi && ng === c.ug && nq === c.uqi) return;
   c.ufi = nf; c.ug = ng; c.uqi = nq;
   const t = Math.round(performance.now() - c.t0);
   c.adjustments++; if (c.firstAdj == null) c.firstAdj = t;
@@ -2535,7 +2561,7 @@ function renderScore() {
   const lvlDiff = h.length > 1 ? levelOf(h[h.length - 1].score) - levelOf(h[h.length - 2].score) : 0;
   setDelta($('pScoreDelta'), lvlDiff ? lvlDiff : null, '');
   $('pScoreDelta').title = 'Change of level since your last session';
-  $('pSessions').textContent = !st ? 'Enter your ID' : lvl != null ? 'of 10' : 'No training yet';
+  $('pSessions').textContent = !st ? 'Enter your ID' : lvl != null ? `Skill score ${cur}` : 'No training yet';
 }
 // Updates the tiles (status line, recommended badge) and the score at the top.
 // (The name renderSteps is kept from the earlier step list so the existing callers still work.)
@@ -2629,15 +2655,17 @@ const liveScore = () => S && S.stage === 'adaptive' && S.elo ? skillScore(S.elo.
 function renderTrialScore(flash) {
   const v = liveScore(), lvl = levelOf(v), el = $('tScoreVal'), old = el.textContent;
   el.textContent = lvl == null ? '—' : lvl;
+  $('tSkillVal').textContent = v == null ? '—' : v;
   $('tLvlBar').style.width = (levelProgress(v) * 100) + '%';
-  $('tScore').title = lvl == null ? 'Points and levels' : `Level ${lvl} of 10`;
+  $('tScore').title = lvl == null ? 'Points and levels' : `Level ${lvl} of 10 · skill score ${v} of 100`;
   if (flash && old !== el.textContent) { const b = $('tScore'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
 }
 let skillInfoOpen = false;
 // POINTS AND LEVELS pop-up: opened from the level on Home, in the tutorial / training header and on the results screen.
 function showSkillInfo() {
   const lvl = levelOf(liveScore());
-  openModal({kicker: lvl == null ? 'Adaptive trainer' : `You are on Level ${lvl} of 10`, title: 'Points and levels', html:
+  const sc = liveScore();
+  openModal({kicker: lvl == null ? 'Adaptive trainer' : `Level ${lvl} · Skill score ${sc}`, title: 'Points and levels', html:
     '<h3 class="intro-h">Points</h3>' +
     '<p>Every question is out of <b>10 points</b>, depending on how close your frequency is:</p>' +
     '<table class="score-guide pts">' +
@@ -2648,7 +2676,8 @@ function showSkillInfo() {
     '</table>' +
     '<p>A boost instead of a cut (or the other way round) halves the points.</p>' +
     '<h3 class="intro-h">Levels</h3>' +
-    '<p>There are 10 levels: 1 is the easiest and 10 is the hardest. Do well and you move up a level; if you struggle, the questions get easier.</p>',
+    '<p>There are 10 levels: 1 is the easiest and 10 is the hardest. Do well and you move up a level; if you struggle, the questions get easier.</p>' +
+    '<p>Your skill score (0–100) shows the same progress in more detail: every 10 points is one level.</p>',
     buttons: [{label: 'Got it', primary: true, onClick: () => { skillInfoOpen = false; }}]});
   skillInfoOpen = true;
 }
@@ -2686,6 +2715,8 @@ function renderReport() {
   // Skill card: the score, the change this session, the history line, personal best and unlocks.
   $('skillVal').textContent = S.level;
   $('skillName').textContent = 'of 10';
+  $('skillScoreVal').textContent = S.score;
+  setDelta($('skillDelta'), n ? S.scoreDelta : null, '');
   $('skillBar').style.width = (levelProgress(S.score) * 100) + '%';
   const mv = $('skillMove');
   mv.className = 'lvl-move' + (S.level > S.levelStart ? ' up' : S.level < S.levelStart ? ' down' : '');
@@ -2761,6 +2792,7 @@ $('testBtn').addEventListener('click', async () => {
 $('vol').addEventListener('input', applyOut);
 ['mQ', 'mA', 'mF'].forEach(id => $(id).addEventListener('click', () => setMon($(id).dataset.m)));
 $('freqSl').addEventListener('input', e => userAdjust({fi: +e.target.value}));
+$('qSl').addEventListener('input', e => userAdjust({qi: +e.target.value}));   // Free EQ only (disabled in the tasks)
 $('gainSl').addEventListener('input', e => userAdjust({gain: S.cur.gopts[+e.target.value]}));
 $('goBtn').addEventListener('click', go);
 $('qhBtn').addEventListener('click', () => setQuickHelp(!qhOn));
